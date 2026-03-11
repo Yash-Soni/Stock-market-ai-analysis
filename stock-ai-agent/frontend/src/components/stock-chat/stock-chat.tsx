@@ -1,0 +1,266 @@
+import { useState, useRef, useEffect, useCallback } from "react"
+import { ScrollArea } from "../../components/ui/scroll-area"
+import { ChatMessage, type ChatMessageData } from "./chat-message"
+import { ChatInput } from "./chat-input"
+import { ChatSidebar } from "./chat-sidebar"
+import { mapBackendResponseToStockAnalyses } from "../../lib/backend-mapper"
+import { QUICK_SUGGESTIONS } from "../../lib/sample-data"
+import { useTheme } from "../../lib/use-theme"
+import { TrendingUp, PanelLeftClose, PanelLeft } from "lucide-react"
+
+const WELCOME_MESSAGE: ChatMessageData = {
+  id: "welcome",
+  role: "assistant",
+  content:
+    "Welcome to StockPulse AI. I can analyze any stock for you with technical indicators, fundamental metrics, and AI-powered insights. Try asking about INFY, AAPL, or TSLA to see a full analysis.",
+  timestamp: new Date(),
+}
+
+export function StockChat() {
+  const { theme, toggleTheme } = useTheme()
+  const [messages, setMessages] = useState<ChatMessageData[]>([WELCOME_MESSAGE])
+  const [isLoading, setIsLoading] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [zerodhaConnected, setZerodhaConnected] = useState(false)
+
+  useEffect(() => {
+    fetch("http://localhost:3000/zerodha/status")
+      .then(res => res.json())
+      .then(data => setZerodhaConnected(data.connected))
+
+    const saved = localStorage.getItem("chatHistory")
+    if (saved) {
+      setMessages(JSON.parse(saved))
+    }
+  }, [])
+
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      if (scrollRef.current) {
+        const viewport = scrollRef.current.querySelector(
+          "[data-slot='scroll-area-viewport']"
+        )
+        if (viewport) {
+          viewport.scrollTop = viewport.scrollHeight
+        }
+      }
+    }, 100)
+  }, [])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, scrollToBottom])
+
+  const handleSend = useCallback(async (content: string) => {
+    const userMessage: ChatMessageData = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content,
+      timestamp: new Date(),
+    }
+    setMessages((prev) => [...prev, userMessage])
+    setIsLoading(true)
+
+    const loadingMessage: ChatMessageData = {
+      id: `loading-${Date.now()}`,
+      role: "assistant",
+      content: "",
+      timestamp: new Date(),
+      isLoading: true,
+    }
+    setMessages((prev) => [...prev, loadingMessage])
+
+    // Prefer ALL CAPS ticker (e.g. INFY, AAPL); ignore generic terms (REIT, ETF) so backend can resolve by name
+    const GENERIC_TERMS = new Set(["REIT", "ETF", "STOCK", "SHARE", "NIFTY", "SENSEX", "INDEX", "IPO"])
+    const allCapsMatch = content.match(/\b([A-Z]{2,10})\b/)
+    const rawSymbol = allCapsMatch ? allCapsMatch[1] : null
+    const symbol = rawSymbol && !GENERIC_TERMS.has(rawSymbol) ? rawSymbol : null
+
+    // if (!symbol) {
+    //   const noSymbolMessage: ChatMessageData = {
+    //     id: `assistant-${Date.now()}`,
+    //     role: "assistant",
+    //     content:
+    //       "Please include a stock symbol in your message (e.g. RELIANCE, INFY, AAPL). I'll fetch live technicals, fundamentals, and AI analysis for that symbol.",
+    //     timestamp: new Date(),
+    //   }
+    //   setMessages((prev) => [...prev.filter((m) => !m.isLoading), noSymbolMessage])
+    //   setIsLoading(false)
+    //   return
+    // }
+
+    try {
+      const res = await fetch("http://localhost:3000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symbol, message: content }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        const errorMessage: ChatMessageData = {
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          content: data?.error ?? `Request failed (${res.status}). Make sure the backend is running on port 3000.`,
+          timestamp: new Date(),
+        }
+        setMessages((prev) => {
+          const next = [...prev.filter((m) => !m.isLoading), errorMessage]
+          localStorage.setItem("chatHistory", JSON.stringify(next))
+          return next
+        })
+        setIsLoading(false)
+        return
+      }
+
+      const stockAnalyses = mapBackendResponseToStockAnalyses(data)
+      const responseMessage: ChatMessageData = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(),
+        stockAnalyses,
+      }
+      setMessages((prev) => {
+        const next = [...prev.filter((m) => !m.isLoading), responseMessage]
+        localStorage.setItem("chatHistory", JSON.stringify(next))
+        return next
+      })
+    } catch (err) {
+      const errorMessage: ChatMessageData = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content:
+          "Could not reach the backend. Ensure it's running (e.g. `node index.js` in the backend folder) and try again.",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => {
+        const next = [...prev.filter((m) => !m.isLoading), errorMessage]
+        localStorage.setItem("chatHistory", JSON.stringify(next))
+        return next
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const recentSymbols = messages
+    .filter((m) => m.stockAnalysis)
+    .map((m) => m.stockAnalysis!)
+    .reverse()
+
+  return (
+    <div className="flex h-screen bg-background">
+      {/* Sidebar */}
+      <div
+        className={`hidden lg:flex flex-col border-r border-border bg-card/30 transition-all duration-300 ${
+          sidebarOpen ? "w-72" : "w-0 overflow-hidden"
+        }`}
+      >
+        <ChatSidebar
+          recentAnalyses={recentSymbols}
+          onSelectSymbol={(s) => handleSend(`Analyze ${s}`)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      </div>
+
+      {/* Main Chat */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <header className="flex items-center gap-3 px-4 lg:px-6 py-3 border-b border-border bg-card/30 backdrop-blur-sm">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="hidden lg:flex size-8 items-center justify-center rounded-lg hover:bg-accent transition-colors text-muted-foreground"
+            aria-label="Toggle sidebar"
+          >
+            {sidebarOpen ? (
+              <PanelLeftClose className="size-4" />
+            ) : (
+              <PanelLeft className="size-4" />
+            )}
+          </button>
+          <div className="flex items-center gap-2.5">
+            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="size-4 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-sm font-semibold text-foreground">
+                StockPulse AI
+              </h1>
+              <p className="text-[10px] text-muted-foreground">
+                Intelligent Stock Analysis
+              </p>
+            </div>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+          {!zerodhaConnected && <button onClick={() =>
+            window.open("http://localhost:3000/connect/zerodha", "_blank")
+          }>
+            Connect Zerodha
+          </button>}
+
+          {zerodhaConnected && <button onClick={() =>
+            fetch("http://localhost:3000/portfolio")
+          }>
+            View Portfolio
+          </button>}
+
+          {zerodhaConnected && <button
+            onClick={async () => {
+              const res = await fetch(
+                "http://localhost:3000/analyze-portfolio"
+              )
+              const data = await res.json()
+              setMessages((prev) => [...prev, {
+                id: `assistant-${Date.now()}`,
+                role: "assistant",
+                content: data.analysis,
+                timestamp: new Date(),
+              }])
+            }}
+          >
+            Analyze Portfolio
+          </button>}
+
+          {zerodhaConnected && <button onClick={() =>
+            fetch("http://localhost:3000/disconnect")
+          }>
+            Disconnect
+          </button>}
+            <span className="flex items-center gap-1.5 text-[10px] text-success font-medium">
+              <span className="size-1.5 rounded-full bg-success animate-pulse" />
+              Live
+            </span>
+          </div>
+        </header>
+
+        {/* Messages */}
+        <div ref={scrollRef} className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="max-w-3xl mx-auto px-4 lg:px-6 py-6">
+              {messages.map((message) => (
+                <ChatMessage key={message.id} message={message} />
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Input */}
+        <div className="border-t border-border bg-card/30 backdrop-blur-sm p-4 lg:px-6">
+          <div className="max-w-3xl mx-auto">
+            <ChatInput
+              onSend={handleSend}
+              disabled={isLoading}
+              suggestions={
+                messages.length <= 1 ? QUICK_SUGGESTIONS : []
+              }
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

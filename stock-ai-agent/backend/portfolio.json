@@ -1,0 +1,14 @@
+{
+  "TCS": {
+    "sector": "IT",
+    "amount": 100000
+  },
+  "INFY": {
+    "sector": "IT",
+    "amount": 80000
+  },
+  "HDFCBANK": {
+    "sector": "Banking",
+    "amount": 120000
+  }
+}

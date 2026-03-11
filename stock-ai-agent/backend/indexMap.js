@@ -1,0 +1,8 @@
+module.exports = {
+  NIFTY50: "^NSEI",
+  NIFTYSMALLCAP250: "SMALLCAP.NS",
+  NIFTYMIDCAP100: "MIDCAP.NS",
+  SENSEX: "^BSESN",
+  NASDAQ: "^IXIC",
+  SP500: "^GSPC"
+}
