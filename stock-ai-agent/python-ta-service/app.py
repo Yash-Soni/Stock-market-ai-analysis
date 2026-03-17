@@ -101,6 +101,19 @@ def resolve_ticker(symbol):
         print("Resolved:", sym)
     return sym
 
+def get_chart_data(symbol):
+    chart_df = yf.download(symbol, period="10d", interval="1d")
+    if chart_df is None or chart_df.empty:
+        return {"prices": [], "dates": []}
+    # yf.download can return MultiIndex columns (e.g. ('Close', 'ITC.NS')); df["Close"] then is a DataFrame
+    close = chart_df["Close"]
+    if isinstance(close, pd.DataFrame):
+        close = close.iloc[:, 0]
+    return {
+        "prices": close.tolist(),
+        "dates": chart_df.index.strftime("%Y-%m-%d").tolist()
+    }
+
 app = FastAPI()
 
 @app.get("/resolve-symbol")
@@ -191,6 +204,51 @@ def get_ta_from_symbol(symbol: str):
         if isinstance(hist.columns, pd.MultiIndex):
           hist.columns = hist.columns.get_level_values(0)
 
+        # Dividends: dividend_history returns DataFrame when data exists, or Series when empty (no .columns!)
+        dividends = pd.Series(dtype=float)
+        try:
+            div_df_raw = ticker.dividend_history(start="2019-01-01")
+            if isinstance(div_df_raw, pd.DataFrame) and not div_df_raw.empty and "dividends" in div_df_raw.columns:
+                div_series = div_df_raw["dividends"].copy()
+                if isinstance(div_series.index, pd.MultiIndex):
+                    try:
+                        div_series = div_series.loc[resolved]
+                    except (KeyError, TypeError):
+                        div_series = div_series.droplevel(0)
+                dividends = div_series
+        except Exception:
+            pass
+        # Fallback: use "dividends" from history. Fetch 1y so we have a full year for recent_dividends.
+        if dividends.empty and not symbol.startswith("^"):
+            try:
+                hist_1y = ticker.history(period="1y", interval="1d")
+                if isinstance(hist_1y, pd.DataFrame):
+                    if isinstance(hist_1y.columns, pd.MultiIndex):
+                        hist_1y.columns = hist_1y.columns.get_level_values(0)
+                    hist_1y.columns = [str(c).lower() for c in hist_1y.columns]
+                if isinstance(hist_1y, pd.DataFrame) and not hist_1y.empty and "dividends" in hist_1y.columns:
+                    d = hist_1y["dividends"]
+                    if isinstance(d.index, pd.MultiIndex):
+                        try:
+                            d = d.loc[resolved]
+                        except (KeyError, TypeError):
+                            d = d.droplevel(0)
+                    d = d[d != 0]
+                    if not d.empty:
+                        dividends = d
+            except Exception:
+                pass
+        elif dividends.empty and hist is not None and "dividends" in hist.columns:
+            d = hist["dividends"]
+            if isinstance(d.index, pd.MultiIndex):
+                try:
+                    d = d.loc[resolved]
+                except (KeyError, TypeError):
+                    d = d.droplevel(0)
+            d = d[d != 0]
+            if not d.empty:
+                dividends = d
+
         if hist is None or not isinstance(hist, pd.DataFrame) or hist.empty:
             return {"error": "No historical data"}
 
@@ -216,7 +274,54 @@ def get_ta_from_symbol(symbol: str):
         closes = hist[price_col].dropna().tolist()
 
         if len(closes) < 60:
-            return {"error": "Not enough candle data"}
+            print("⚠️ Not enough candles:", len(closes), "for", resolved)
+
+            return {
+                "symbol": symbol,
+                "warning": "Limited historical data (indicators may be unreliable)",
+                "close": float(closes[-1]) if closes else None,
+                "currency": "INR" if resolved.endswith((".NS", ".BO")) else "USD",
+                "chart_data": get_chart_data(resolved),
+
+                # Return null indicators instead of breaking
+                "rsi": None,
+                "ema20": None,
+                "ema50": None,
+                "macd_hist": None,
+                "atr": None
+            }
+
+        latest_close = closes[-1]
+        recent_dividends = []
+        avg_dividend = None
+        dividend_yield = None
+
+        if dividends is not None and not dividends.empty:
+
+            # Convert to DataFrame (dividends is a Series: date index -> amount)
+            div_df = dividends.reset_index()
+            div_df.columns = ["date", "amount"]
+            div_df["date"] = pd.to_datetime(div_df["date"]).dt.tz_localize(None)
+
+            # Last 1 year of dividends
+            one_year_ago = pd.Timestamp.now() - pd.DateOffset(years=1)
+            div_df_1y = div_df[div_df["date"] >= one_year_ago].sort_values(by="date", ascending=False)
+
+            recent_dividends = [
+                {
+                    "date": row["date"].strftime("%Y-%m-%d"),
+                    "amount": float(row["amount"])
+                }
+                for _, row in div_df_1y.iterrows()
+            ]
+
+            # Dividend yield = sum(dividends in last 1 year) / latest close
+            sum_dividends_1y = float(div_df_1y["amount"].sum())
+            avg_dividend = sum_dividends_1y  # total paid in last year (for reference)
+            if sum_dividends_1y and latest_close:
+                dividend_yield = (sum_dividends_1y / latest_close) * 100
+            else:
+                dividend_yield = None
 
         df = pd.DataFrame(closes, columns=["close"])
 
@@ -293,7 +398,11 @@ def get_ta_from_symbol(symbol: str):
             "macd_hist": float(macd_hist) if macd_hist else None,
             "atr": float(latest_atr) if latest_atr else None,
             "close": float(latest_close) if latest_close else None,
-            "currency": "INR" if resolved.endswith((".NS", ".BO")) else "USD"
+            "currency": "INR" if resolved.endswith((".NS", ".BO")) else "USD",
+            "chart_data": get_chart_data(resolved),
+            "avg_dividend": avg_dividend,
+            "recent_dividends": recent_dividends,
+            "dividend_yield": dividend_yield
         }
 
     except Exception as e:

@@ -7,6 +7,7 @@ import { mapBackendResponseToStockAnalyses } from "../../lib/backend-mapper"
 import { QUICK_SUGGESTIONS } from "../../lib/sample-data"
 import { useTheme } from "../../lib/use-theme"
 import { TrendingUp, PanelLeftClose, PanelLeft } from "lucide-react"
+import { MacroSummary } from "./macro-summary"
 
 const WELCOME_MESSAGE: ChatMessageData = {
   id: "welcome",
@@ -167,7 +168,7 @@ export function StockChat() {
       </div>
 
       {/* Main Chat */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
         <header className="flex items-center gap-3 px-4 lg:px-6 py-3 border-b border-border bg-card/30 backdrop-blur-sm">
           <button
@@ -260,6 +261,11 @@ export function StockChat() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Right: Macro events */}
+      <div className="hidden xl:flex flex-col border-l border-border bg-card/20">
+        <MacroSummary />
       </div>
     </div>
   )

@@ -15,8 +15,16 @@ export interface BackendChatResponse {
   roe?: number
   debtToEquity?: number
   revenueGrowth?: number
+  macroSummary?: string
   reply: string
-  error?: string
+  error?: string,
+  chart_data?: {
+    prices: number[],
+    dates: string[]
+  },
+  dividend_yield?: number,
+  recent_dividends?: { date: string, amount: number }[],
+  avg_dividend?: number,
 }
 
 /** Response shape when backend returns multiple analyses (e.g. multi-symbol query) */
@@ -49,7 +57,6 @@ function rsiSignal(rsi: number): "bullish" | "bearish" | "neutral" {
 export function mapBackendResponseToStockAnalysis(
   data: BackendChatResponse
 ): StockAnalysis {
-  console.log('data', data);
   const score = Number(data.score)
   const risk = Number(data.risk)
   const rsi = data.rsi != null ? Number(data.rsi) : NaN
@@ -133,7 +140,8 @@ const isBearish =
   const summary =
     data.reply?.trim().split("\n")[0]?.slice(0, 200) ||
     `Analysis for ${data.symbol}. Score ${score}/100, Risk ${risk}/100.`
-
+  
+  const macroSummary = data.macroSummary || "No major world events detected"  
   
   const highVol =
     atrPct > 0.03
@@ -187,6 +195,11 @@ const isBearish =
     verdict,
     verdictType,
     analysisMarkdown: data.reply || undefined,
+    macroSummary: macroSummary,
+    chart_data: data.chart_data,
+    dividend_yield: data.dividend_yield,
+    recent_dividends: data.recent_dividends,
+    avg_dividend: data.avg_dividend,
   }
 }
 

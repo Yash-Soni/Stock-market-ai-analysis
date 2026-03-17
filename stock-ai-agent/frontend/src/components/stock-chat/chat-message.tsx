@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import ReactMarkdown from "react-markdown"
-import { TrendingUp, BarChart3, FileText } from "lucide-react"
+import { TrendingUp, BarChart3, FileText, DollarSign } from "lucide-react"
+import { Sparkline } from "./sparkline"
 import { ScoreGauge } from "./score-gauge"
 import { MetricsCard } from "./metrics-card"
 import { StockHeader } from "./stock-header.tsx"
@@ -33,7 +34,15 @@ export interface StockAnalysis {
   verdictType: "bullish" | "bearish" | "neutral"
   /** Raw markdown from backend AI reply; rendered below the verdict when present */
   analysisMarkdown?: string,
-  currency: string
+  macroSummary?: string,
+  currency: string,
+  chart_data?: {
+    prices: number[],
+    dates: string[]
+  }
+  dividend_yield?: number,
+  recent_dividends?: { date: string, amount: number }[],
+  avg_dividend?: number,
 }
 
 export interface ChatMessageData {
@@ -147,6 +156,46 @@ export function ChatMessage({ message }: ChatMessageProps) {
                     />
                   </div>
 
+                  {analysis.chart_data?.prices && analysis.chart_data.prices.length >= 2 && (
+                    <div className="rounded-xl border border-border bg-card/50 p-4">
+                      <div className="flex items-baseline justify-between gap-2 mb-2">
+                        <p className="text-xs font-medium text-muted-foreground">Price (10d)</p>
+                        <div className="text-right text-xs text-muted-foreground">
+                          <span className="font-mono text-foreground">
+                            {analysis.currency === "INR" ? "₹" : "$"}
+                            {analysis.chart_data.prices[analysis.chart_data.prices.length - 1].toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="ml-1.5">
+                            (Range {Math.min(...analysis.chart_data.prices).toFixed(2)} – {Math.max(...analysis.chart_data.prices).toFixed(2)})
+                          </span>
+                        </div>
+                      </div>
+                      <Sparkline
+                        data={analysis.chart_data.prices}
+                        className="w-full h-16"
+                        segmentColors
+                      />
+                      {(analysis.chart_data.dates?.length === analysis.chart_data.prices.length ? (
+                        <>
+                          <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground font-mono">
+                            {analysis.chart_data.dates.map((d) => (
+                              <span key={d} title={d}>
+                                {d.slice(5)}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex justify-between mt-0.5 text-[10px] text-muted-foreground font-mono">
+                            {analysis.chart_data.prices.map((p, i) => (
+                              <span key={`${analysis.chart_data!.dates![i]}-${p}`}>
+                                {(analysis.currency === "INR" ? "₹" : "$")}{p.toFixed(2)}
+                              </span>
+                            ))}
+                          </div>
+                        </>
+                      ) : null)}
+                    </div>
+                  )}
+
                   <Tabs defaultValue="technicals" className="w-full">
                     <TabsList className="w-full bg-secondary">
                       <TabsTrigger
@@ -155,6 +204,13 @@ export function ChatMessage({ message }: ChatMessageProps) {
                       >
                         <BarChart3 className="size-3.5" />
                         Technicals
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="dividends"
+                        className="flex-1 gap-1.5 text-xs"
+                      >
+                        <DollarSign className="size-3.5" />
+                        Dividends
                       </TabsTrigger>
                       <TabsTrigger
                         value="fundamentals"
@@ -170,6 +226,52 @@ export function ChatMessage({ message }: ChatMessageProps) {
                         icon={<BarChart3 className="size-4" />}
                         metrics={analysis.technicals}
                       />
+                    </TabsContent>
+                    <TabsContent value="dividends">
+                      <MetricsCard
+                        title="Dividend Metrics"
+                        icon={<DollarSign className="size-4" />}
+                        metrics={[
+                          {
+                            label: "Dividend Yield",
+                            value: analysis.dividend_yield ? `${analysis.dividend_yield.toFixed(2)}%` : "N/A",
+                          },
+                          {
+                            label: "Total Dividend Last Year",
+                            value: analysis.avg_dividend ? `${analysis.currency === "INR" ? "₹ " : "$ "}${analysis.avg_dividend.toFixed(2)}` : "N/A",
+                          }
+                        ]}
+                      />
+                      <div className="rounded-xl border border-border bg-card/50 overflow-hidden">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+                          <DollarSign className="size-4 text-primary" />
+                          <h4 className="text-sm font-semibold text-foreground">Recent Dividends (1y)</h4>
+                        </div>
+                        {analysis.recent_dividends?.length ? (
+                          <>
+                            <div className="grid grid-cols-[1fr_auto] gap-2 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border/50">
+                              <span>Date</span>
+                              <span>Amount</span>
+                            </div>
+                            <div className="divide-y divide-border/50">
+                              {analysis.recent_dividends.map((d) => (
+                                <div
+                                  key={d.date}
+                                  className="grid grid-cols-[1fr_auto] gap-2 px-4 py-2.5 hover:bg-accent/30 transition-colors items-center"
+                                >
+                                  <span className="text-sm text-foreground">{d.date}</span>
+                                  <span className="text-sm font-mono font-medium text-foreground">
+                                    {analysis.currency === "INR" ? "₹" : "$"}
+                                    {d.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <p className="px-4 py-4 text-sm text-muted-foreground">No dividends in the last year.</p>
+                        )}
+                      </div>
                     </TabsContent>
                     <TabsContent value="fundamentals">
                       <MetricsCard
@@ -192,7 +294,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
               {analysis.analysisMarkdown && (
                 <div className="rounded-xl border border-border bg-card/50 p-4">
                   <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                    Full Analysis {message.stockAnalyses?.length && message.stockAnalyses.length > 1 ? `· ${analysis.symbol}` : ""}
+                    {message.stockAnalysis?.symbol || message.stockAnalyses?.[0]?.symbol}
+                    - Full Analysis {message.stockAnalyses?.length && message.stockAnalyses.length > 1 ? `· ${analysis.symbol}` : ""}
                   </h4>
                   <div className="text-sm text-foreground/90 leading-relaxed prose prose-sm max-w-none [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_p]:my-2 [&_ul]:list-disc [&_ul]:list-inside [&_ol]:list-decimal [&_ol]:list-inside">
                     <ReactMarkdown

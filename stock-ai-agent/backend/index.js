@@ -7,6 +7,8 @@ const fs = require("fs")
 const memory = require("./memory")
 const zerodha = require("./zerodha")
 const portfolioSvc = require("./portfolioService")
+
+const { getMacroEvents } = require("./services/macroEvents")
 const { resolveSymbol } = require("./symbolResolver")
 
 const app = express()
@@ -40,10 +42,11 @@ app.get("/disconnect", zerodha.disconnect)
 app.get("/zerodha/status", zerodha.status)
 
 async function getTAFromSymbol(symbol) {
+  
   const response = await axios.get(
     `http://localhost:8000/ta-symbol?symbol=${symbol}`
   )
-
+  
   if (response.data.error) {
     throw new Error(response.data.error)
   }
@@ -207,7 +210,7 @@ const analyzeStock = async (symbol, message, portfolio) => {
     const ta = await getTAFromSymbol(symbol)
     const fundamentals = await getFundamentals(symbol)
     const mfOverlap = getMFOverlap(symbol)
-    let score = 0
+    let score = 0   
 
     // RSI
     if (ta.rsi > 40 && ta.rsi < 65) score += 20
@@ -261,6 +264,24 @@ const analyzeStock = async (symbol, message, portfolio) => {
     const volatility = ta.atr / ta.close
 
     if (volatility > 0.03) risk += 10
+
+    const macroEvents = await getMacroEvents()
+
+    const macroSummary = macroEvents.length > 0 ? macroEvents.map(e => {
+
+        const bullish = e?.sentiment?.bullishSectors ?? []
+        const bearish = e?.sentiment?.bearishSectors ?? []
+
+        return `
+          Event: ${e.event}
+          Bullish sectors: ${bullish.join(", ")}
+          Bearish sectors: ${bearish.join(", ")}
+        `
+
+      }).join("\n")
+    : "No major world events detected"
+    console.log('ta', ta);
+    
 
     const completion = await client.chat.completions.create({
       model: "llama-3.3-70b-versatile",
@@ -397,6 +418,14 @@ const analyzeStock = async (symbol, message, portfolio) => {
             - Leverage (Debt)
             - Growth
 
+            Evaluate dividend strength:
+
+              - Frequent dividends → stable cash flow
+              - High dividend → income stock
+              - Irregular dividends → less predictable
+
+              Mention dividend insights in Long-term View.
+
             If fundamentals strong:
             Recommend SIP-style accumulation.
 
@@ -430,6 +459,15 @@ const analyzeStock = async (symbol, message, portfolio) => {
             "A gradual investment approach can help reduce risk"
           `
         },
+        {
+          role:"system",
+          content:`
+            Global Macro Context: ${macroSummary}
+            Stock Sector: ${fundamentals.sector}
+            
+            Consider how these events may affect the stock being analyzed.
+          `
+        },
         ...memory.getHistory(),
         {
           role: "user",
@@ -441,6 +479,11 @@ const analyzeStock = async (symbol, message, portfolio) => {
             EMA50: ${ta.ema50}
             MACD Histogram: ${ta.macd_hist}
             Close Price: ${ta.close}
+
+            Average Dividend: ${ta.avg_dividend ?? "Not Available"}
+
+            Recent Dividends:
+            ${ta.recent_dividends?.map(d => `${d.date}: ${d.amount}`).join("\n") || "None"}
 
             Buy Confidence Score: ${score} / 100
             Risk Score: ${risk} / 100
@@ -492,9 +535,7 @@ const analyzeStock = async (symbol, message, portfolio) => {
     memory.addMessage({
       role: "assistant",
       content: completion.choices[0].message.content
-    })
-    console.log('ta', ta);
-    
+    })    
 
     return {
       symbol,
@@ -506,6 +547,7 @@ const analyzeStock = async (symbol, message, portfolio) => {
       roe: fundamentals.roe,
       debtToEquity: fundamentals.debtToEquity,
       revenueGrowth: fundamentals.revenueGrowth,
+      macroSummary: macroSummary,
       reply: completion.choices[0].message.content
     }
 }
@@ -513,9 +555,10 @@ const analyzeStock = async (symbol, message, portfolio) => {
 app.post("/chat", async (req, res) => {
   try {
 
-    let { message, symbol } = req.body
+    let { message } = req.body
 
     const intent = await classifyIntent(message)
+    console.log('intent', intent);
 
     // ---------------- PORTFOLIO ----------------
     if (intent === "PORTFOLIO") {
@@ -608,17 +651,8 @@ app.post("/chat", async (req, res) => {
 
     let symbols = []
 
-    // 1️⃣ If frontend already passed a symbol
-    if (symbol) {
-      symbols.push({
-        entity: symbol,
-        symbol
-      })
-    }
-
     // 2️⃣ Otherwise extract from message
     if (symbols.length === 0) {
-
       const entities =
         await extractCompanyEntities(message)
 
@@ -626,14 +660,13 @@ app.post("/chat", async (req, res) => {
 
         const resolved =
           await resolveSymbol(entity)
+        console.log('resolved symbol', resolved, 'for entity', entity);
 
         if (resolved) {
-
           symbols.push({
             entity,
             symbol: resolved
           })
-
         }
       }
     }
@@ -680,7 +713,7 @@ app.post("/chat", async (req, res) => {
       portfolio = null
     }
 
-    memory.setLastSymbol(symbol)
+    memory.setLastSymbol(symbols[0].symbol)
 
     const results =
       await Promise.all(
@@ -701,6 +734,17 @@ app.post("/chat", async (req, res) => {
   } catch (err) {
     res.status(500).json({
       error: err.message
+    })
+  }
+})
+
+app.get("/world-events", async(req,res)=>{
+  try{
+    const events = await getMacroEvents()
+    res.json(events)
+  }catch(err){
+    res.status(500).json({
+      error:"Failed to fetch world events"
     })
   }
 })
