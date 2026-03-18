@@ -17,6 +17,8 @@ const WELCOME_MESSAGE: ChatMessageData = {
   timestamp: new Date(),
 }
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000"
+
 export function StockChat() {
   const { theme, toggleTheme } = useTheme()
   const [messages, setMessages] = useState<ChatMessageData[]>([WELCOME_MESSAGE])
@@ -26,7 +28,7 @@ export function StockChat() {
   const [zerodhaConnected, setZerodhaConnected] = useState(false)
 
   useEffect(() => {
-    fetch("http://localhost:3000/zerodha/status")
+    fetch(`${API_BASE}zerodha/status`)
       .then(res => res.json())
       .then(data => setZerodhaConnected(data.connected))
 
@@ -92,7 +94,7 @@ export function StockChat() {
     // }
 
     try {
-      const res = await fetch("http://localhost:3000/chat", {
+      const res = await fetch(`${API_BASE}chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol, message: content }),
@@ -198,13 +200,13 @@ export function StockChat() {
           </div>
           <div className="ml-auto flex items-center gap-2">
           {!zerodhaConnected && <button onClick={() =>
-            window.open("http://localhost:3000/connect/zerodha", "_blank")
+            window.open(`${API_BASE}connect/zerodha`, "_blank")
           }>
             Connect Zerodha
           </button>}
 
           {zerodhaConnected && <button onClick={() =>
-            fetch("http://localhost:3000/portfolio")
+            fetch(`${API_BASE}portfolio`)
           }>
             View Portfolio
           </button>}
@@ -212,7 +214,7 @@ export function StockChat() {
           {zerodhaConnected && <button
             onClick={async () => {
               const res = await fetch(
-                "http://localhost:3000/analyze-portfolio"
+                `${API_BASE}analyze-portfolio`
               )
               const data = await res.json()
               setMessages((prev) => [...prev, {
@@ -227,7 +229,7 @@ export function StockChat() {
           </button>}
 
           {zerodhaConnected && <button onClick={() =>
-            fetch("http://localhost:3000/disconnect")
+            fetch(`${API_BASE}disconnect`)
           }>
             Disconnect
           </button>}

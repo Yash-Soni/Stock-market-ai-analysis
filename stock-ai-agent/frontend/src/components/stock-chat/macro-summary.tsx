@@ -20,6 +20,7 @@ const GAP_PX = 8
 const SLIDE_DURATION_MS = 600
 const STEP_PX = CARD_HEIGHT_PX + GAP_PX
 const VIEWPORT_HEIGHT_PX = VISIBLE_BOXES * STEP_PX - GAP_PX
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000"
 
 function toArray(v: unknown): string[] {
   if (Array.isArray(v)) return v.filter((x) => typeof x === "string")
@@ -92,7 +93,7 @@ export function MacroSummary() {
     let cancelled = false
     async function load() {
       try {
-        const res = await fetch("http://localhost:3000/world-events")
+        const res = await fetch(`${API_BASE}world-events`)
         if (!res.ok || cancelled) return
         const data = await res.json()
         if (cancelled) return

@@ -1,12 +1,13 @@
 const axios = require("axios")
 const fmp = require("./fmpService")
+const API_BASE = process.env.VITE_API_BASE || "http://localhost:3000"
 
 async function analyzePortfolioLogic() {
   let holdings = null
 
   try {
     const response = await axios.get(
-      "http://localhost:3000/portfolio"
+      `${API_BASE}portfolio`
     )
     holdings = response.data
   } catch (e) {

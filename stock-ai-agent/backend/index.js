@@ -53,7 +53,7 @@ async function getTAFromSymbol(symbol) {
   
   const response = await axios.get(
     `${TA_BASE_URL}/ta-symbol?symbol=${symbol}`,
-    { timeout: 15000 }
+    { timeout: 30000 }
   )
   
   if (response.data.error) {
@@ -66,7 +66,7 @@ async function getTAFromSymbol(symbol) {
 async function getFundamentals(symbol) {
   const response = await axios.get(
     `${TA_BASE_URL}/fundamentals?symbol=${symbol}`,
-    { timeout: 15000 }
+    { timeout: 30000 }
   )
 
   if (response.data.error) {
@@ -628,7 +628,8 @@ app.post("/chat", async (req, res) => {
         })
 
       const ta = await axios.get(
-        `http://127.0.0.1:8000/ta-symbol?symbol=${indexMap[indexSymbol]}`
+        `${TA_BASE_URL}/ta-symbol?symbol=${indexMap[indexSymbol]}`,
+        { timeout: 30000 }
       )
 
       const completion =
@@ -714,9 +715,10 @@ app.post("/chat", async (req, res) => {
 
     let portfolio = null
 
+    const BACKEND_BASE = process.env.BACKEND_BASE_URL || process.env.API_BASE || "http://localhost:3000"
     try {
       const portfolioRes =
-        await axios.get("http://localhost:3000/portfolio")
+        await axios.get(`${BACKEND_BASE}/portfolio`, { timeout: 8000 })
 
       portfolio = portfolioRes.data
     } catch {
@@ -742,9 +744,12 @@ app.post("/chat", async (req, res) => {
     })
 
   } catch (err) {
-    res.status(500).json({
-      error: err.message
-    })
+    const isAxiosErr = err.response != null || err.code === "ECONNREFUSED" || err.code === "ETIMEDOUT"
+    const status = err.response?.status ?? (isAxiosErr ? 503 : 500)
+    const message = isAxiosErr && (err.code === "ECONNREFUSED" || err.code === "ETIMEDOUT")
+      ? "Technical analysis service is unavailable. If deployed, set TA_BASE_URL to your Python TA service URL."
+      : (err.message || "Something went wrong")
+    res.status(status).json({ error: message })
   }
 })
 
