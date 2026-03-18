@@ -1,4 +1,4 @@
-import type { StockAnalysis } from "@/components/stock-chat/chat-message"
+import type { StockAnalysis } from "../components/stock-chat/chat-message.tsx"
 
 export const SAMPLE_ANALYSES: Record<string, StockAnalysis> = {
   INFY: {
@@ -7,6 +7,7 @@ export const SAMPLE_ANALYSES: Record<string, StockAnalysis> = {
     price: 1275.5,
     change: -18.35,
     changePercent: -1.42,
+    currency: "INR",
     sparkData: [1350, 1380, 1340, 1310, 1295, 1320, 1280, 1260, 1290, 1275],
     sector: "IT Services",
     buyScore: 20,
@@ -67,6 +68,7 @@ export const SAMPLE_ANALYSES: Record<string, StockAnalysis> = {
     price: 232.15,
     change: 3.47,
     changePercent: 1.52,
+    currency: "USD",
     sparkData: [220, 222, 225, 223, 228, 230, 227, 229, 231, 232],
     sector: "Technology",
     buyScore: 72,
@@ -123,6 +125,7 @@ export const SAMPLE_ANALYSES: Record<string, StockAnalysis> = {
     price: 342.8,
     change: -5.2,
     changePercent: -1.49,
+    currency: "USD",
     sparkData: [360, 355, 350, 358, 345, 340, 348, 344, 338, 343],
     sector: "Automotive",
     buyScore: 45,

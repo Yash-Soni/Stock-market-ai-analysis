@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 const STROKE_UP = "oklch(0.72 0.19 155)"
 const STROKE_DOWN = "oklch(0.60 0.22 25)"

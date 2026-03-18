@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, type ChangeEvent, type KeyboardEvent } from "react"
 import { SendHorizonal } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 interface ChatInputProps {
   onSend: (message: string) => void

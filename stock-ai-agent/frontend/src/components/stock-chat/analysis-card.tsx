@@ -13,7 +13,6 @@ interface AnalysisCardProps {
 }
 
 export function AnalysisCard({
-  summary,
   points,
   verdict,
   verdictType,

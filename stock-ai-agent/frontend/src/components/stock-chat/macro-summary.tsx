@@ -68,7 +68,6 @@ function parseMacroEvents(data: unknown): MacroEventItem[] {
     .map((item) => {
       const rawEvent = typeof item.event === "string" ? item.event : ""
       const title = parseEventTitle(rawEvent)
-      const sentiment = item.sentiment && typeof item.sentiment === "object" ? item.sentiment as Record<string, unknown> : {}
       return {
         event: title,
         sectorsImpacted: toArray(item.sectorsImpacted),
