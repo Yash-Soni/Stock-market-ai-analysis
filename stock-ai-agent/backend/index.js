@@ -26,14 +26,20 @@ const client = new Groq({
   apiKey: process.env.GROQ_API_KEY
 })
 
-app.use(cors({
-  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-  credentials: true,
-  optionsSuccessStatus: 204,
-}))
+// app.use(cors({
+//   origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+//   methods: ["GET", "POST", "OPTIONS"],
+//   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+//   credentials: true,
+//   optionsSuccessStatus: 204,
+// }))
+
+app.use(cors({ origin: "*" }))
 app.use(express.json())
+
+app.get("/", (req, res) => {
+  res.json({ status: "Backend running" })
+})
 
 app.get("/connect/zerodha", zerodha.login)
 app.get("/callback/zerodha", zerodha.callback)
@@ -41,10 +47,13 @@ app.get("/portfolio", zerodha.getPortfolio)
 app.get("/disconnect", zerodha.disconnect)
 app.get("/zerodha/status", zerodha.status)
 
+const TA_BASE_URL = process.env.TA_BASE_URL || "http://localhost:8000"
+
 async function getTAFromSymbol(symbol) {
   
   const response = await axios.get(
-    `http://localhost:8000/ta-symbol?symbol=${symbol}`
+    `${TA_BASE_URL}/ta-symbol?symbol=${symbol}`,
+    { timeout: 15000 }
   )
   
   if (response.data.error) {
@@ -56,7 +65,8 @@ async function getTAFromSymbol(symbol) {
 
 async function getFundamentals(symbol) {
   const response = await axios.get(
-    `http://localhost:8000/fundamentals?symbol=${symbol}`
+    `${TA_BASE_URL}/fundamentals?symbol=${symbol}`,
+    { timeout: 15000 }
   )
 
   if (response.data.error) {
@@ -826,6 +836,8 @@ app.get("/analyze-portfolio", async (req, res) => {
   }
 })
 
-app.listen(3000, () => {
-  console.log("AI Agent running on 3000")
+const PORT = process.env.PORT || 3000
+
+app.listen(PORT, () => {
+  console.log("Server running on port", PORT)
 })
