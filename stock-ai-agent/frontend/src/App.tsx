@@ -225,6 +225,7 @@
 import { StockChat } from "./components/stock-chat/stock-chat"
 
 export function App() {
+  console.log("API BASE:", import.meta.env.VITE_API_BASE)
   return <StockChat />
 }
 
