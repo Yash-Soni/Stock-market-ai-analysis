@@ -37,7 +37,7 @@ export function ChatInput({ onSend, disabled, suggestions = [] }: ChatInputProps
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 w-full min-w-0">
       {suggestions.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {suggestions.map((suggestion) => (
@@ -53,7 +53,7 @@ export function ChatInput({ onSend, disabled, suggestions = [] }: ChatInputProps
           ))}
         </div>
       )}
-      <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-card/50 backdrop-blur-sm p-2 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+      <div className="relative flex min-w-0 items-end gap-2 rounded-2xl border border-border bg-card/50 backdrop-blur-sm p-2 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
         <textarea
           ref={textareaRef}
           value={value}
@@ -63,7 +63,7 @@ export function ChatInput({ onSend, disabled, suggestions = [] }: ChatInputProps
           disabled={disabled}
           rows={1}
           className={cn(
-            "flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none outline-none px-2 py-1.5 max-h-[120px]",
+            "min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none outline-none px-2 py-1.5 max-h-[120px]",
             "disabled:opacity-50"
           )}
         />
@@ -72,7 +72,7 @@ export function ChatInput({ onSend, disabled, suggestions = [] }: ChatInputProps
           onClick={handleSend}
           disabled={disabled || !value.trim()}
           className={cn(
-            "flex-shrink-0 size-9 rounded-xl flex items-center justify-center transition-all",
+            "shrink-0 size-9 rounded-xl flex items-center justify-center transition-all",
             value.trim() && !disabled
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "bg-muted text-muted-foreground"

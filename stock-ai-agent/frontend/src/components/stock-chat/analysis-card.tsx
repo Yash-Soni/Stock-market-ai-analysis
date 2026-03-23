@@ -18,7 +18,7 @@ export function AnalysisCard({
   verdictType,
 }: AnalysisCardProps) {
   return (
-    <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm overflow-hidden">
+    <div className="rounded-xl w-fit sm:w-full border border-border bg-card/50 backdrop-blur-sm overflow-hidden min-w-0 max-w-full">
       <div className="px-4 py-3 border-b border-border">
         <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <svg
@@ -37,21 +37,21 @@ export function AnalysisCard({
           AI Analysis
         </h4>
       </div>
-      <div className="p-4 space-y-4">
+      <div className="p-3 sm:p-4 space-y-4 min-w-0">
 
-        <div className="space-y-1">
+        <div className="space-y-1 min-w-0">
           {points.map((point, i) => (
-            <div key={i} className="flex items-start gap-2.5">
+            <div key={i} className="flex items-start gap-2.5 min-w-0">
               <span
                 className={cn(
-                  "mt-1.5 size-2 rounded-full flex-shrink-0",
+                  "mt-1.5 size-2 rounded-full shrink-0",
                   point.type === "bullish" && "bg-success",
                   point.type === "bearish" && "bg-danger",
                   point.type === "neutral" && "bg-warning"
                 )}
                 aria-hidden="true"
               />
-              <p className="text-sm text-foreground/80 leading-relaxed">
+              <p className="text-sm text-foreground/80 leading-relaxed min-w-0 flex-1 break-words">
                 {point.text}
               </p>
             </div>
@@ -80,7 +80,7 @@ export function AnalysisCard({
           </div>
           <p
             className={cn(
-              "text-sm font-medium",
+              "text-sm font-medium break-words min-w-0",
               verdictType === "bullish" && "text-success",
               verdictType === "bearish" && "text-danger",
               verdictType === "neutral" && "text-warning"

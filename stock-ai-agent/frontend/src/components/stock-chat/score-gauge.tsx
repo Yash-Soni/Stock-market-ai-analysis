@@ -28,7 +28,7 @@ export function ScoreGauge({ value, max, label, size = "md" }: ScoreGaugeProps) 
   }
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="flex max-w-full min-w-0 flex-col items-center gap-1 sm:gap-1.5">
       <div className="relative" role="meter" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max} aria-label={label}>
         <svg
           width={svgSize}
@@ -70,7 +70,7 @@ export function ScoreGauge({ value, max, label, size = "md" }: ScoreGaugeProps) 
           </span>
         </div>
       </div>
-      <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+      <span className="max-w-[5.5rem] text-center text-[10px] font-medium uppercase leading-tight tracking-wide text-muted-foreground wrap-break-word sm:max-w-none sm:text-xs sm:tracking-wider">
         {label}
       </span>
     </div>

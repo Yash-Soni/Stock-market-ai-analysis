@@ -154,7 +154,7 @@ export function StockChat() {
     .reverse()
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-full min-h-0 max-h-full w-full max-w-full overflow-hidden bg-background box-border">
       {/* Sidebar */}
       <div
         className={`hidden lg:flex flex-col border-r border-border bg-card/30 transition-all duration-300 ${
@@ -170,9 +170,9 @@ export function StockChat() {
       </div>
 
       {/* Main Chat */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden min-w-0 w-full max-w-full max-h-full">
         {/* Header */}
-        <header className="flex items-center gap-3 px-4 lg:px-6 py-3 border-b border-border bg-card/30 backdrop-blur-sm">
+        <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 sm:px-4 lg:px-6 py-2 sm:py-3 border-b border-border bg-card/30 backdrop-blur-sm shrink-0 min-w-0">
           <button
             type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -185,65 +185,79 @@ export function StockChat() {
               <PanelLeft className="size-4" />
             )}
           </button>
-          <div className="flex items-center gap-2.5">
-            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="size-4 text-primary" />
+          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+            <div className="size-7 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center sm:size-8">
+              <TrendingUp className="size-3.5 text-primary sm:size-4" />
             </div>
-            <div>
-              <h1 className="text-sm font-semibold text-foreground">
+            <div className="min-w-0">
+              <h1 className="text-xs font-semibold text-foreground sm:text-sm truncate">
                 StockPulse AI
               </h1>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[9px] text-muted-foreground sm:text-[10px] truncate">
                 Intelligent Stock Analysis
               </p>
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-2">
-          {!zerodhaConnected && <button onClick={() =>
-            window.open(`${API_BASE}connect/zerodha`, "_blank")
-          }>
-            Connect Zerodha
-          </button>}
+          <div className="ml-auto flex min-w-0 flex-1 basis-full sm:basis-auto sm:flex-initial flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+          {!zerodhaConnected && (
+            <button
+              type="button"
+              className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80 hover:bg-accent"
+              onClick={() => window.open(`${API_BASE}connect/zerodha`, "_blank")}
+            >
+              Connect Zerodha
+            </button>
+          )}
 
-          {zerodhaConnected && <button onClick={() =>
-            fetch(`${API_BASE}portfolio`)
-          }>
-            View Portfolio
-          </button>}
+          {zerodhaConnected && (
+            <button
+              type="button"
+              className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
+              onClick={() => fetch(`${API_BASE}portfolio`)}
+            >
+              Portfolio
+            </button>
+          )}
 
-          {zerodhaConnected && <button
-            onClick={async () => {
-              const res = await fetch(
-                `${API_BASE}analyze-portfolio`
-              )
-              const data = await res.json()
-              setMessages((prev) => [...prev, {
-                id: `assistant-${Date.now()}`,
-                role: "assistant",
-                content: data.analysis,
-                timestamp: new Date(),
-              }])
-            }}
-          >
-            Analyze Portfolio
-          </button>}
+          {zerodhaConnected && (
+            <button
+              type="button"
+              className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
+              onClick={async () => {
+                const res = await fetch(`${API_BASE}analyze-portfolio`)
+                const data = await res.json()
+                setMessages((prev) => [...prev, {
+                  id: `assistant-${Date.now()}`,
+                  role: "assistant",
+                  content: data.analysis,
+                  timestamp: new Date(),
+                }])
+              }}
+            >
+              Analyze
+            </button>
+          )}
 
-          {zerodhaConnected && <button onClick={() =>
-            fetch(`${API_BASE}disconnect`)
-          }>
-            Disconnect
-          </button>}
-            <span className="flex items-center gap-1.5 text-[10px] text-success font-medium">
-              <span className="size-1.5 rounded-full bg-success animate-pulse" />
+          {zerodhaConnected && (
+            <button
+              type="button"
+              className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
+              onClick={() => fetch(`${API_BASE}disconnect`)}
+            >
+              Disconnect
+            </button>
+          )}
+            <span className="flex items-center gap-1 text-[10px] text-success font-medium shrink-0">
+              <span className="size-1.5 shrink-0 rounded-full bg-success animate-pulse" />
               Live
             </span>
           </div>
         </header>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="max-w-3xl mx-auto px-4 lg:px-6 py-6">
+        <div ref={scrollRef} className="min-h-0 flex-1 basis-0 w-full min-w-0 max-w-full overflow-hidden">
+          <ScrollArea className="h-full min-h-0 w-full min-w-0 max-w-full overflow-x-hidden">
+            <div className="mx-auto box-border w-full min-w-0 max-w-full max-w-3xl overflow-x-hidden px-2 py-4 sm:px-4 sm:py-6 lg:px-6 max-lg:pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]">
               {messages.map((message) => (
                 <ChatMessage key={message.id} message={message} />
               ))}
@@ -251,9 +265,11 @@ export function StockChat() {
           </ScrollArea>
         </div>
 
-        {/* Input */}
-        <div className="border-t border-border bg-card/30 backdrop-blur-sm p-4 lg:px-6">
-          <div className="max-w-3xl mx-auto">
+        {/* Input: pinned on small screens so it stays visible above long threads / iOS chrome */}
+        <div
+          className="z-40 w-full min-w-0 shrink-0 overflow-hidden border-t border-border bg-card/30 p-3 backdrop-blur-sm sm:p-4 lg:static lg:z-auto lg:px-6 lg:pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] max-lg:fixed max-lg:bottom-0 max-lg:left-0 max-lg:right-0 max-lg:bg-card/95 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] max-lg:pt-3 max-lg:shadow-[0_-8px_32px_rgba(0,0,0,0.35)]"
+        >
+          <div className="mx-auto w-full max-w-3xl min-w-0">
             <ChatInput
               onSend={handleSend}
               disabled={isLoading}

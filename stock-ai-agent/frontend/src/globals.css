@@ -129,10 +129,37 @@
 }
 
 @layer base {
+  /* Lock app to the viewport so flex layout (messages + composer) isn’t pushed off-screen on mobile */
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
   }
+  #root {
+    height: 100%;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+}
+
+/*
+ * Radix ScrollArea wraps content in a div with display:table + minWidth:100%.
+ * That inner box grows to the widest descendant, so the scroll “column” becomes wider
+ * than the viewport and right-aligned bubbles clip off-screen. Force block + 100% width.
+ */
+[data-slot="scroll-area-viewport"] > div,
+[data-radix-scroll-area-viewport] > div {
+  display: block !important;
+  min-width: 0 !important;
+  width: 90% !important;
+  max-width: 100% !important;
+  margin: 0 auto;
 }
