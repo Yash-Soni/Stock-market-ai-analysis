@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useContext } from "react"
 import { ScrollArea } from "../../components/ui/scroll-area"
 import { ChatMessage, type ChatMessageData } from "./chat-message"
 import { ChatInput } from "./chat-input"
@@ -8,6 +8,8 @@ import { QUICK_SUGGESTIONS } from "../../lib/sample-data"
 import { useTheme } from "../../lib/use-theme"
 import { TrendingUp, PanelLeftClose, PanelLeft } from "lucide-react"
 import { MacroSummary } from "./macro-summary"
+import { AuthContext } from "../../context/AuthContext"
+import { supabase } from "../../lib/supabase"
 
 const WELCOME_MESSAGE: ChatMessageData = {
   id: "welcome",
@@ -26,6 +28,9 @@ export function StockChat() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [zerodhaConnected, setZerodhaConnected] = useState(false)
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     fetch(`${API_BASE}zerodha/status`)
@@ -80,6 +85,9 @@ export function StockChat() {
     const rawSymbol = allCapsMatch ? allCapsMatch[1] : null
     const symbol = rawSymbol && !GENERIC_TERMS.has(rawSymbol) ? rawSymbol : null
 
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+
     // if (!symbol) {
     //   const noSymbolMessage: ChatMessageData = {
     //     id: `assistant-${Date.now()}`,
@@ -96,10 +104,20 @@ export function StockChat() {
     try {
       const res = await fetch(`${API_BASE}chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol, message: content }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message: content,
+          conversationId, // 🔥 important
+        }),
       })
-      const data = await res.json()
+      const data = await res.json();
+
+      if (data.conversationId) {
+        setConversationId(data.conversationId);
+      }
 
       if (!res.ok) {
         const errorMessage: ChatMessageData = {
@@ -199,58 +217,62 @@ export function StockChat() {
             </div>
           </div>
           <div className="ml-auto flex min-w-0 flex-1 basis-full sm:basis-auto sm:flex-initial flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-          {!zerodhaConnected && (
-            <button
-              type="button"
-              className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80 hover:bg-accent"
-              onClick={() => window.open(`${API_BASE}connect/zerodha`, "_blank")}
-            >
-              Connect Zerodha
-            </button>
-          )}
+            {!zerodhaConnected && (
+              <button
+                type="button"
+                className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80 hover:bg-accent"
+                onClick={() => window.open(`${API_BASE}connect/zerodha`, "_blank")}
+              >
+                Connect Zerodha
+              </button>
+            )}
 
-          {zerodhaConnected && (
-            <button
-              type="button"
-              className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
-              onClick={() => fetch(`${API_BASE}portfolio`)}
-            >
-              Portfolio
-            </button>
-          )}
+            {zerodhaConnected && (
+              <button
+                type="button"
+                className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
+                onClick={() => fetch(`${API_BASE}portfolio`)}
+              >
+                Portfolio
+              </button>
+            )}
 
-          {zerodhaConnected && (
-            <button
-              type="button"
-              className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
-              onClick={async () => {
-                const res = await fetch(`${API_BASE}analyze-portfolio`)
-                const data = await res.json()
-                setMessages((prev) => [...prev, {
-                  id: `assistant-${Date.now()}`,
-                  role: "assistant",
-                  content: data.analysis,
-                  timestamp: new Date(),
-                }])
-              }}
-            >
-              Analyze
-            </button>
-          )}
+            {zerodhaConnected && (
+              <button
+                type="button"
+                className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
+                onClick={async () => {
+                  const res = await fetch(`${API_BASE}analyze-portfolio`)
+                  const data = await res.json()
+                  setMessages((prev) => [...prev, {
+                    id: `assistant-${Date.now()}`,
+                    role: "assistant",
+                    content: data.analysis,
+                    timestamp: new Date(),
+                  }])
+                }}
+              >
+                Analyze
+              </button>
+            )}
 
-          {zerodhaConnected && (
-            <button
-              type="button"
-              className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
-              onClick={() => fetch(`${API_BASE}disconnect`)}
-            >
-              Disconnect
-            </button>
-          )}
+            {zerodhaConnected && (
+              <button
+                type="button"
+                className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
+                onClick={() => fetch(`${API_BASE}disconnect`)}
+              >
+                Disconnect
+              </button>
+            )}
             <span className="flex items-center gap-1 text-[10px] text-success font-medium shrink-0">
               <span className="size-1.5 shrink-0 rounded-full bg-success animate-pulse" />
               Live
             </span>
+            {
+              user && <button onClick={() => supabase.auth.signOut()}>
+              Logout
+            </button>}
           </div>
         </header>
 

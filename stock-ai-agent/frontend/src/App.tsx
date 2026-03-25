@@ -222,9 +222,17 @@
 //   );
 // }
 
+import ProtectedRoute from "./components/ProtectedRoute"
 import { StockChat } from "./components/stock-chat/stock-chat"
+import { AuthProvider } from "./context/AuthContext"
 
 export function App() {
-  return <StockChat />
+  return (
+    <AuthProvider>
+      <ProtectedRoute>
+        <StockChat />
+      </ProtectedRoute>
+    </AuthProvider>
+  )
 }
 

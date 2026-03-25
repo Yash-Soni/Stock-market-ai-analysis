@@ -7,6 +7,7 @@ const fs = require("fs")
 const memory = require("./memory")
 const zerodha = require("./zerodha")
 const portfolioSvc = require("./portfolioService")
+const { db } = require("./services/client")
 
 const { getMacroEvents } = require("./services/macroEvents")
 const { resolveSymbol } = require("./symbolResolver")
@@ -216,356 +217,379 @@ function getMFOverlap(symbol) {
   return overlapFunds
 }
 
-const analyzeStock = async (symbol, message, portfolio) => {
-    const ta = await getTAFromSymbol(symbol)
-    const fundamentals = await getFundamentals(symbol)
-    const mfOverlap = getMFOverlap(symbol)
-    let score = 0   
+const analyzeStock = async (symbol, message, portfolio, conversationId) => {
+  const ta = await getTAFromSymbol(symbol)
+  const fundamentals = await getFundamentals(symbol)
+  const mfOverlap = getMFOverlap(symbol)
+  let score = 0   
 
-    // RSI
-    if (ta.rsi > 40 && ta.rsi < 65) score += 20
-    // EMA20 Trend
-    if (ta.close > ta.ema20) score += 20
-    // EMA50 Trend
-    if (ta.close > ta.ema50) score += 20
-    // MACD Momentum
-    if (ta.macd_hist > 0) score += 20
-    // Avoid Overbought
-    if (ta.rsi < 70) score += 20
+  // RSI
+  if (ta.rsi > 40 && ta.rsi < 65) score += 20
+  // EMA20 Trend
+  if (ta.close > ta.ema20) score += 20
+  // EMA50 Trend
+  if (ta.close > ta.ema50) score += 20
+  // MACD Momentum
+  if (ta.macd_hist > 0) score += 20
+  // Avoid Overbought
+  if (ta.rsi < 70) score += 20
 
-    let risk = 0
+  let risk = 0
 
-    // Overbought risk
-    if (ta.rsi > 65) risk += 25
+  // Overbought risk
+  if (ta.rsi > 65) risk += 25
 
-    // Weak trend
-    if (ta.close < ta.ema20) risk += 25
-    if (ta.close < ta.ema50) risk += 25
+  // Weak trend
+  if (ta.close < ta.ema20) risk += 25
+  if (ta.close < ta.ema50) risk += 25
 
-    // Weak momentum
-    if (ta.macd_hist < 0) risk += 15
+  // Weak momentum
+  if (ta.macd_hist < 0) risk += 15
 
-    let sectorMap = {}
-    let sectorAllocation = {}
+  let sectorMap = {}
+  let sectorAllocation = {}
 
-    if (portfolio) {
-      for (let stock in portfolio) {
-        const sector = portfolio[stock].sector
-        const amt = portfolio[stock].amount
+  if (portfolio) {
+    for (let stock in portfolio) {
+      const sector = portfolio[stock].sector
+      const amt = portfolio[stock].amount
 
-        if (!sectorMap[sector]) {
-          sectorMap[sector] = 0
-        }
-
-        sectorMap[sector] += amt
+      if (!sectorMap[sector]) {
+        sectorMap[sector] = 0
       }
 
-      const totalInvestment = Object.values(sectorMap)
-        .reduce((a, b) => a + b, 0)
-
-
-      for (let sector in sectorMap) {
-        sectorAllocation[sector] =
-          ((sectorMap[sector] / totalInvestment) * 100).toFixed(2)
-      }
+      sectorMap[sector] += amt
     }
 
-    // Volatility risk
-    const volatility = ta.atr / ta.close
+    const totalInvestment = Object.values(sectorMap)
+      .reduce((a, b) => a + b, 0)
 
-    if (volatility > 0.03) risk += 10
 
-    const macroEvents = await getMacroEvents()
+    for (let sector in sectorMap) {
+      sectorAllocation[sector] =
+        ((sectorMap[sector] / totalInvestment) * 100).toFixed(2)
+    }
+  }
 
-    const macroSummary = macroEvents.length > 0 ? macroEvents.map(e => {
+  // Volatility risk
+  const volatility = ta.atr / ta.close
 
-        const bullish = e?.sentiment?.bullishSectors ?? []
-        const bearish = e?.sentiment?.bearishSectors ?? []
+  if (volatility > 0.03) risk += 10
 
-        return `
-          Event: ${e.event}
-          Bullish sectors: ${bullish.join(", ")}
-          Bearish sectors: ${bearish.join(", ")}
-        `
+  const macroEvents = await getMacroEvents()
 
-      }).join("\n")
-    : "No major world events detected"
-    console.log('ta', ta);
-    
+  const macroSummary = macroEvents.length > 0 ? macroEvents.map(e => {
 
-    const completion = await client.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        {
-          role: "system",
-          content: `
-            You are a professional portfolio manager managing institutional capital.
+      const bullish = e?.sentiment?.bullishSectors ?? []
+      const bearish = e?.sentiment?.bearishSectors ?? []
 
-            When the user asks whether to buy, sell or analyze a stock:
+      return `
+        Event: ${e.event}
+        Bullish sectors: ${bullish.join(", ")}
+        Bearish sectors: ${bearish.join(", ")}
+      `
 
-            Do NOT give a simple yes/no answer.
+    }).join("\n")
+  : "No major world events detected"
+  console.log('ta', ta);
+  const { data: messages } = await db
+    .from("messages")
+    .select("role, content")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true })
+    .limit(6); // last 6 messages only
 
-            Evaluate across:
+  const chatHistory = messages.map(m => ({
+    role: m.role,
+    content: m.content
+  }));
 
-            1. Trend Structure
-                - Close vs EMA20
-                - EMA20 vs EMA50
+  const completion = await client.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    messages: [
+      {
+        role: "system",
+        content: `
+          You are a professional portfolio manager managing institutional capital.
 
-              If:
-              Close < EMA20 AND Close < EMA50
-                → Bearish trend (downtrend intact)
-                → Avoid full allocation
+          When the user asks whether to buy, sell or analyze a stock:
 
-              If:
-              Close > EMA20 AND EMA20 slope turning positive
-                → Trend improvement
-                → Possible reversal phase
+          Do NOT give a simple yes/no answer.
 
-            2. Momentum
+          Evaluate across:
+
+          1. Trend Structure
+              - Close vs EMA20
+              - EMA20 vs EMA50
+
+            If:
+            Close < EMA20 AND Close < EMA50
+              → Bearish trend (downtrend intact)
+              → Avoid full allocation
+
+            If:
+            Close > EMA20 AND EMA20 slope turning positive
+              → Trend improvement
+              → Possible reversal phase
+
+          2. Momentum
+            Use:
+              - RSI
+              - MACD Histogram
+
+            RSI:
+              < 25 → Deep oversold
+              30–40 → Early accumulation zone
+              > 70 → Overbought
+
+            If:
+            MACD improving while trend bearish
+              → Momentum recovery inside downtrend
+
+          3. Volatility Risk
+              Calculate:
+              ATR% = ATR / Close
+
+              ATR% < 1.5% → Low volatility  
+              ATR% 1.5–3% → Moderate volatility  
+              ATR% > 3% → High volatility  
+
+              Use ATR% for risk assessment.
+              Do NOT interpret ATR in absolute terms.
+
+          4. Long-term Investment Quality
               Use:
-                - RSI
-                - MACD Histogram
+              - ROE
+              - PE Ratio
+              - Debt to Equity
+              - Revenue Growth
 
-              RSI:
-                < 25 → Deep oversold
-                30–40 → Early accumulation zone
-                > 70 → Overbought
+              Interpret ROE as:
+              <10% → Weak  
+              10–20% → Average  
+              20–30% → Strong  
+              >30% → Exceptional  
 
-              If:
-              MACD improving while trend bearish
-                → Momentum recovery inside downtrend
+              Treat ROE >30% as strong positive signal.
 
-            3. Volatility Risk
-                Calculate:
-                ATR% = ATR / Close
+              Strong fundamentals:
+              ROE >20%
+              Debt/Equity <0.5
+              Positive Revenue Growth
 
-                ATR% < 1.5% → Low volatility  
-                ATR% 1.5–3% → Moderate volatility  
-                ATR% > 3% → High volatility  
+          5. Capital Deployment Rules
 
-                Use ATR% for risk assessment.
-                Do NOT interpret ATR in absolute terms.
+              If fundamentals strong but trend weak:
+              → Use staggered accumulation.
 
-            4. Long-term Investment Quality
-                Use:
-                - ROE
-                - PE Ratio
-                - Debt to Equity
-                - Revenue Growth
+              ATR-based allocation:
 
-                Interpret ROE as:
-                <10% → Weak  
-                10–20% → Average  
-                20–30% → Strong  
-                >30% → Exceptional  
+              ATR% >3% → Initial allocation = 20%  
+              ATR% 1.5–3% → Initial allocation = 30%  
+              ATR% <1.5% → Initial allocation = 40%
 
-                Treat ROE >30% as strong positive signal.
+              Add:
+              30% if RSI <30  
+              Final allocation after:
+              Close > EMA20 AND EMA20 slope positive
 
-                Strong fundamentals:
-                ROE >20%
-                Debt/Equity <0.5
-                Positive Revenue Growth
+              If ROE > 30% AND Revenue Growth positive:
+              → Increase initial allocation by up to 10%
+              even in bearish trend.
 
-            5. Capital Deployment Rules
+              Business quality reduces downside persistence.
+              Allow slightly higher staggered entry
+              for fundamentally strong companies.
+              
+              If ROE or Debt is unavailable:
+              → Reduce initial allocation by an additional 10%.
 
-                If fundamentals strong but trend weak:
-                → Use staggered accumulation.
+              Unknown business quality increases uncertainty.
+              Lower exposure is recommended.
 
-                ATR-based allocation:
+              Never recommend full allocation in bearish trend.
 
-                ATR% >3% → Initial allocation = 20%  
-                ATR% 1.5–3% → Initial allocation = 30%  
-                ATR% <1.5% → Initial allocation = 40%
+          ---
 
-                Add:
-                30% if RSI <30  
-                Final allocation after:
-                Close > EMA20 AND EMA20 slope positive
+          OUTPUT FORMAT (STRICT):
 
-                If ROE > 30% AND Revenue Growth positive:
-                → Increase initial allocation by up to 10%
-                even in bearish trend.
+          📊 Decision Summary:
+          Trend:
+          Momentum:
+          Volatility (ATR%):
+          Initial Allocation:
+          Capital at Risk =
+            Initial Allocation exposed if trend continues downward.
 
-                Business quality reduces downside persistence.
-                Allow slightly higher staggered entry
-                for fundamentally strong companies.
-                
-                If ROE or Debt is unavailable:
-                → Reduce initial allocation by an additional 10%.
+            Do NOT calculate Capital at Risk using Risk Score.
+            Capital at Risk always equals Initial Allocation.
 
-                Unknown business quality increases uncertainty.
-                Lower exposure is recommended.
+          Entry Plan:
+          - % now
+          - % if RSI <30
+          - % after EMA20 slope positive
 
-                Never recommend full allocation in bearish trend.
+          Risk Note:
+          - Trend risk
+          - Volatility risk
+          - False reversal risk
 
-            ---
+          Long-term View:
+          - Profitability (ROE)
+          - Leverage (Debt)
+          - Growth
 
-            OUTPUT FORMAT (STRICT):
+          Evaluate dividend strength:
 
-            📊 Decision Summary:
-            Trend:
-            Momentum:
-            Volatility (ATR%):
-            Initial Allocation:
-            Capital at Risk =
-              Initial Allocation exposed if trend continues downward.
+            - Frequent dividends → stable cash flow
+            - High dividend → income stock
+            - Irregular dividends → less predictable
 
-              Do NOT calculate Capital at Risk using Risk Score.
-              Capital at Risk always equals Initial Allocation.
+            Mention dividend insights in Long-term View.
 
-            Entry Plan:
-            - % now
-            - % if RSI <30
-            - % after EMA20 slope positive
+          If fundamentals strong:
+          Recommend SIP-style accumulation.
 
-            Risk Note:
-            - Trend risk
-            - Volatility risk
-            - False reversal risk
+          Do NOT repeat indicators.
+          After the Decision Summary:
 
-            Long-term View:
-            - Profitability (ROE)
-            - Leverage (Debt)
-            - Growth
+          Provide a Layman-Friendly Insight section.
 
-            Evaluate dividend strength:
+          Explain:
+          - Current trend in simple language
+          - What the entry plan means in practice
+          - Short-term risks in plain terms
+          - Long-term outlook based on business strength
 
-              - Frequent dividends → stable cash flow
-              - High dividend → income stock
-              - Irregular dividends → less predictable
+          Avoid technical jargon like RSI, EMA, MACD in this section.
+          Use simple investor-friendly language.
 
-              Mention dividend insights in Long-term View.
+          Keep the Decision Summary numeric,
+          but keep the Insight section descriptive and easy to understand.
+          
+          Speak as an advisor, not as an analyst.
 
-            If fundamentals strong:
-            Recommend SIP-style accumulation.
+          Avoid phrases like:
+          "Our analysis suggests"
+          "Based on the data"
+          "This indicates"
 
-            Do NOT repeat indicators.
-            After the Decision Summary:
+          Instead use:
+          "You may consider"
+          "It may be safer to"
+          "A gradual investment approach can help reduce risk"
+        `
+      },
+      {
+        role:"system",
+        content:`
+          Global Macro Context: ${macroSummary}
+          Stock Sector: ${fundamentals.sector}
+          
+          Consider how these events may affect the stock being analyzed.
+        `
+      },
+      ...chatHistory,
+      {
+        role: "user",
+        content: `
+          User asked: "${message}"
 
-            Provide a Layman-Friendly Insight section.
+          RSI: ${ta.rsi}
+          EMA20: ${ta.ema20}
+          EMA50: ${ta.ema50}
+          MACD Histogram: ${ta.macd_hist}
+          Close Price: ${ta.close}
 
-            Explain:
-            - Current trend in simple language
-            - What the entry plan means in practice
-            - Short-term risks in plain terms
-            - Long-term outlook based on business strength
+          Average Dividend: ${ta.avg_dividend ?? "Not Available"}
 
-            Avoid technical jargon like RSI, EMA, MACD in this section.
-            Use simple investor-friendly language.
+          Recent Dividends:
+          ${ta.recent_dividends?.map(d => `${d.date}: ${d.amount}`).join("\n") || "None"}
 
-            Keep the Decision Summary numeric,
-            but keep the Insight section descriptive and easy to understand.
-            
-            Speak as an advisor, not as an analyst.
+          Buy Confidence Score: ${score} / 100
+          Risk Score: ${risk} / 100
+          ATR: ${ta.atr}
 
-            Avoid phrases like:
-            "Our analysis suggests"
-            "Based on the data"
-            "This indicates"
+          ${portfolio ? "Sector Allocation:" : "No connected portfolio"}
+          ${portfolio ? JSON.stringify(sectorAllocation) : "N/A"}
 
-            Instead use:
-            "You may consider"
-            "It may be safer to"
-            "A gradual investment approach can help reduce risk"
-          `
-        },
-        {
-          role:"system",
-          content:`
-            Global Macro Context: ${macroSummary}
-            Stock Sector: ${fundamentals.sector}
-            
-            Consider how these events may affect the stock being analyzed.
-          `
-        },
-        ...memory.getHistory(),
-        {
-          role: "user",
-          content: `
-            User asked: "${message}"
+          ROE: ${
+            fundamentals.roe !== null
+              ? fundamentals.roe
+              : "Not Available"
+          }
+          PE Ratio: ${
+            fundamentals.pe !== null
+              ? fundamentals.pe
+              : "Not Available"
+          }
 
-            RSI: ${ta.rsi}
-            EMA20: ${ta.ema20}
-            EMA50: ${ta.ema50}
-            MACD Histogram: ${ta.macd_hist}
-            Close Price: ${ta.close}
+          Debt to Equity: ${
+            fundamentals.debtToEquity !== null
+              ? fundamentals.debtToEquity
+              : "Not Available"
+          }
 
-            Average Dividend: ${ta.avg_dividend ?? "Not Available"}
+          Revenue Growth: ${
+            fundamentals.revenueGrowth !== null
+              ? fundamentals.revenueGrowth
+              : "Not Available"
+          }
 
-            Recent Dividends:
-            ${ta.recent_dividends?.map(d => `${d.date}: ${d.amount}`).join("\n") || "None"}
+          MF Overlap: ${
+            mfOverlap
+              ? `Yes, held via: ${mfOverlap.join(", ")}`
+              : "No"
+          }
+        `
+      }
+    ]
+  })
 
-            Buy Confidence Score: ${score} / 100
-            Risk Score: ${risk} / 100
-            ATR: ${ta.atr}
+  // // Store user message
+  // memory.addMessage({
+  //   role: "user",
+  //   content: message
+  // })
 
-            ${portfolio ? "Sector Allocation:" : "No connected portfolio"}
-            ${portfolio ? JSON.stringify(sectorAllocation) : "N/A"}
+  // // Store AI response
+  // memory.addMessage({
+  //   role: "assistant",
+  //   content: completion.choices[0].message.content
+  // })    
 
-            ROE: ${
-              fundamentals.roe !== null
-                ? fundamentals.roe
-                : "Not Available"
-            }
-            PE Ratio: ${
-              fundamentals.pe !== null
-                ? fundamentals.pe
-                : "Not Available"
-            }
-
-            Debt to Equity: ${
-              fundamentals.debtToEquity !== null
-                ? fundamentals.debtToEquity
-                : "Not Available"
-            }
-
-            Revenue Growth: ${
-              fundamentals.revenueGrowth !== null
-                ? fundamentals.revenueGrowth
-                : "Not Available"
-            }
-
-            MF Overlap: ${
-              mfOverlap
-                ? `Yes, held via: ${mfOverlap.join(", ")}`
-                : "No"
-            }
-          `
-        }
-      ]
-    })
-
-    // Store user message
-    memory.addMessage({
-      role: "user",
-      content: message
-    })
-
-    // Store AI response
-    memory.addMessage({
-      role: "assistant",
-      content: completion.choices[0].message.content
-    })    
-
-    return {
-      symbol,
-      score,
-      risk,
-      currency: ta.currency,
-      ...ta,
-      pe: fundamentals.pe,
-      roe: fundamentals.roe,
-      debtToEquity: fundamentals.debtToEquity,
-      revenueGrowth: fundamentals.revenueGrowth,
-      macroSummary: macroSummary,
-      reply: completion.choices[0].message.content
-    }
+  return {
+    symbol,
+    score,
+    risk,
+    currency: ta.currency,
+    ...ta,
+    pe: fundamentals.pe,
+    roe: fundamentals.roe,
+    debtToEquity: fundamentals.debtToEquity,
+    revenueGrowth: fundamentals.revenueGrowth,
+    macroSummary: macroSummary,
+    reply: completion.choices[0].message.content
+  }
 }
 
 app.post("/chat", async (req, res) => {
   try {
 
-    let { message } = req.body
+    let { message, conversationId } = req.body
+
+    const userId = req.user?.sub;
+
+    // Create conversation if not exists
+    if (!conversationId) {
+      const { data } = await db
+        .from("conversations")
+        .insert({ user_id: userId })
+        .select()
+        .single();
+
+      conversationId = data.id;
+    }
 
     const intent = await classifyIntent(message)
     console.log('intent', intent);
@@ -685,16 +709,19 @@ app.post("/chat", async (req, res) => {
     // 3️⃣ fallback to conversation memory
     if (symbols.length === 0) {
 
-      const last =
-        memory.getLastSymbol()
+      const { data: convo } = await db
+        .from("conversations")
+        .select("last_symbol")
+        .eq("id", conversationId)
+        .single();
 
-      if (last) {
+      const lastSymbol = convo?.last_symbol;
 
+      if (lastSymbol) {
         symbols.push({
-          entity: last,
-          symbol: last
+          entity: lastSymbol,
+          symbol: lastSymbol
         })
-
       }
     }
 
@@ -709,7 +736,10 @@ app.post("/chat", async (req, res) => {
     }
 
     // store last symbol for context
-    memory.setLastSymbol(symbols[0].symbol)
+    await db
+      .from("conversations")
+      .update({ last_symbol: symbols[0].symbol })
+      .eq("id", conversationId);
 
     // ---------------- PORTFOLIO FETCH ----------------
 
@@ -725,22 +755,38 @@ app.post("/chat", async (req, res) => {
       portfolio = null
     }
 
-    memory.setLastSymbol(symbols[0].symbol)
+    await db
+      .from("conversations")
+      .update({ last_symbol: symbols[0].symbol })
+      .eq("id", conversationId);
+
+    await db.from("messages").insert({
+      conversation_id: conversationId,
+      role: "user",
+      content: message
+    });
 
     const results =
       await Promise.all(
-
         symbols.map(s =>
           analyzeStock(
             s.symbol,
             message,
-            portfolio
+            portfolio,
+            conversationId
           )
         )
       )
 
+    await db.from("messages").insert({
+      conversation_id: conversationId,
+      role: "assistant",
+      content: JSON.stringify(results)
+    });
+
     return res.json({
-      analyses: results
+      analyses: results,
+      conversationId
     })
 
   } catch (err) {
