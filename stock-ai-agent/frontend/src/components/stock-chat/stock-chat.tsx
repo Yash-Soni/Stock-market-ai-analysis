@@ -83,7 +83,7 @@ export function StockChat() {
     const GENERIC_TERMS = new Set(["REIT", "ETF", "STOCK", "SHARE", "NIFTY", "SENSEX", "INDEX", "IPO"])
     const allCapsMatch = content.match(/\b([A-Z]{2,10})\b/)
     const rawSymbol = allCapsMatch ? allCapsMatch[1] : null
-    const symbol = rawSymbol && !GENERIC_TERMS.has(rawSymbol) ? rawSymbol : null
+    // const symbol = rawSymbol && !GENERIC_TERMS.has(rawSymbol) ? rawSymbol : null
 
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
