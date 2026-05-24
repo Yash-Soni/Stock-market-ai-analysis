@@ -80,9 +80,9 @@ export function StockChat() {
     setMessages((prev) => [...prev, loadingMessage])
 
     // Prefer ALL CAPS ticker (e.g. INFY, AAPL); ignore generic terms (REIT, ETF) so backend can resolve by name
-    const GENERIC_TERMS = new Set(["REIT", "ETF", "STOCK", "SHARE", "NIFTY", "SENSEX", "INDEX", "IPO"])
-    const allCapsMatch = content.match(/\b([A-Z]{2,10})\b/)
-    const rawSymbol = allCapsMatch ? allCapsMatch[1] : null
+    // const GENERIC_TERMS = new Set(["REIT", "ETF", "STOCK", "SHARE", "NIFTY", "SENSEX", "INDEX", "IPO"])
+    // const allCapsMatch = content.match(/\b([A-Z]{2,10})\b/)
+    // const rawSymbol = allCapsMatch ? allCapsMatch[1] : null
     // const symbol = rawSymbol && !GENERIC_TERMS.has(rawSymbol) ? rawSymbol : null
 
     const { data } = await supabase.auth.getSession();
@@ -164,7 +164,7 @@ export function StockChat() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [conversationId])
 
   const recentSymbols = messages
     .filter((m) => m.stockAnalysis)

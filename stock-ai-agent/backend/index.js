@@ -27,16 +27,36 @@ const client = new Groq({
   apiKey: process.env.GROQ_API_KEY
 })
 
-// app.use(cors({
-//   origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
-//   methods: ["GET", "POST", "OPTIONS"],
-//   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-//   credentials: true,
-//   optionsSuccessStatus: 204,
-// }))
+app.use(cors({
+  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  credentials: true,
+  optionsSuccessStatus: 204,
+}))
 
-app.use(cors({ origin: "*" }))
+// app.use(cors({ origin: "*" }))
 app.use(express.json())
+
+async function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization || ""
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length)
+    : null
+
+  if (!token) {
+    return res.status(401).json({ error: "Missing authorization token" })
+  }
+
+  const { data, error } = await db.auth.getUser(token)
+
+  if (error || !data.user) {
+    return res.status(401).json({ error: "Invalid or expired token" })
+  }
+
+  req.user = data.user
+  next()
+}
 
 app.get("/", (req, res) => {
   res.json({ status: "Backend running" })
@@ -95,7 +115,16 @@ async function getFundamentals(symbol) {
 //   }
 // })
 
-async function classifyIntent(message) {
+const ALLOWED_INTENTS = ["STOCK", "PORTFOLIO", "MARKET", "GENERAL"]
+
+const FOLLOW_UP_PRONOUNS = /\b(it|this|that|the stock|the company|its)\b/i
+
+async function classifyIntent(message, { hasLastSymbol = false } = {}) {
+
+  // Heuristic: short follow-up referencing a previous stock → STOCK
+  if (hasLastSymbol && FOLLOW_UP_PRONOUNS.test(message) && !/\bmy (portfolio|holdings|allocation)\b/i.test(message)) {
+    return "STOCK"
+  }
 
   const intentCheck =
     await client.chat.completions.create({
@@ -105,24 +134,32 @@ async function classifyIntent(message) {
         {
           role: "system",
           content: `
-            Classify the user's intent into one of:
+You classify a user's stock-app message into EXACTLY one of:
 
-            1. STOCK
-            2. PORTFOLIO
-            3. MARKET
-            4. GENERAL
+STOCK     – about a single company / ticker / stock, including buy / sell / hold / target / risk / what-if follow-ups
+PORTFOLIO – about the user's OWN holdings as a whole (allocation, diversification, "my portfolio", "my holdings", overall risk of MY portfolio, rebalance)
+MARKET    – broad indices: Nifty, Sensex, S&P 500, Nasdaq, smallcap, midcap, sector indices
+GENERAL   – anything else (greetings, definitions, general finance questions)
 
-            MARKET includes:
-            - NIFTY
-            - SENSEX
-            - Smallcap
-            - Midcap
-            - Sector indices
-            - S&P 500
-            - NASDAQ
+CRITICAL RULES:
+- Follow-ups using pronouns ("it", "this", "that", "the stock") refer to a previous stock → STOCK.
+- "Should I sell it", "What if I sell it", "Is it a buy", "Worth holding?", "Target price", "Sell or hold" → STOCK.
+- PORTFOLIO requires explicit portfolio words like: "my portfolio", "my holdings", "my allocation", "rebalance my", "diversification of my portfolio", "sector exposure of my portfolio".
+- If unsure between STOCK and PORTFOLIO, choose STOCK.
 
-            Reply ONLY with one word.
-          `
+Examples:
+- "Analyze ORCL"            → STOCK
+- "Should I sell it"        → STOCK
+- "What if I sell it"       → STOCK
+- "Is this a good buy"      → STOCK
+- "Target price for TCS"    → STOCK
+- "How is my portfolio"     → PORTFOLIO
+- "Rebalance my holdings"   → PORTFOLIO
+- "Nifty trend today"       → MARKET
+- "Hi"                      → GENERAL
+
+Reply with ONLY one word: STOCK, PORTFOLIO, MARKET, or GENERAL.
+          `.trim()
         },
         {
           role: "user",
@@ -131,11 +168,14 @@ async function classifyIntent(message) {
       ]
     })
 
-  return intentCheck
+  const raw = intentCheck
     .choices[0]
     .message
     .content
     .trim()
+    .toUpperCase()
+
+  return ALLOWED_INTENTS.includes(raw) ? raw : "STOCK"
 }
 
 // async function extractCompanyEntity(message) {
@@ -217,7 +257,7 @@ function getMFOverlap(symbol) {
   return overlapFunds
 }
 
-const analyzeStock = async (symbol, message, portfolio, conversationId) => {
+const analyzeStock = async (symbol, message, portfolio, chatHistory) => {
   const ta = await getTAFromSymbol(symbol)
   const fundamentals = await getFundamentals(symbol)
   const mfOverlap = getMFOverlap(symbol)
@@ -292,17 +332,6 @@ const analyzeStock = async (symbol, message, portfolio, conversationId) => {
     }).join("\n")
   : "No major world events detected"
   console.log('ta', ta);
-  const { data: messages } = await db
-    .from("messages")
-    .select("role, content")
-    .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true })
-    .limit(6); // last 6 messages only
-
-  const chatHistory = messages.map(m => ({
-    role: m.role,
-    content: m.content
-  }));
 
   const completion = await client.chat.completions.create({
     model: "llama-3.3-70b-versatile",
@@ -573,12 +602,15 @@ const analyzeStock = async (symbol, message, portfolio, conversationId) => {
   }
 }
 
-app.post("/chat", async (req, res) => {
+app.post("/chat", requireAuth, async (req, res) => {
   try {
 
     let { message, conversationId } = req.body
 
-    const userId = req.user?.sub;
+    const userId = req.user?.id
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
     // Create conversation if not exists
     if (!conversationId) {
@@ -589,16 +621,46 @@ app.post("/chat", async (req, res) => {
         .single();
 
       conversationId = data.id;
+      console.log('conversationId', conversationId);
     }
 
-    const intent = await classifyIntent(message)
+    const { data: ownedConversation } = await db
+      .from("conversations")
+      .select("id")
+      .eq("id", conversationId)
+      .eq("user_id", userId)
+      .single()
+    if (!ownedConversation) {
+      return res.status(403).json({ error: "Conversation does not belong to user" })
+    }
+
+    // Peek at last_symbol so the intent classifier can prefer STOCK on follow-ups
+    const { data: convoForIntent } = await db
+      .from("conversations")
+      .select("last_symbol")
+      .eq("id", conversationId)
+      .eq("user_id", userId)
+      .single()
+
+    const intent = await classifyIntent(message, {
+      hasLastSymbol: !!convoForIntent?.last_symbol
+    })
     console.log('intent', intent);
 
     // ---------------- PORTFOLIO ----------------
     if (intent === "PORTFOLIO") {
 
-      const weights =
-        await portfolioSvc.analyzePortfolioLogic()
+      let weights
+      try {
+        weights = await portfolioSvc.analyzePortfolioLogic()
+      } catch (err) {
+        if (err.message === "Not connected") {
+          return res.json({
+            reply: "I can't access your portfolio because your Zerodha account isn't connected. Click \"Connect Zerodha\" and try again."
+          })
+        }
+        throw err
+      }
 
       const completion =
         await client.chat.completions.create({
@@ -630,7 +692,8 @@ app.post("/chat", async (req, res) => {
         })
 
       return res.json({
-        reply: completion.choices[0].message.content
+        reply: completion.choices[0].message.content,
+        conversationId
       })
     }
 
@@ -713,6 +776,7 @@ app.post("/chat", async (req, res) => {
         .from("conversations")
         .select("last_symbol")
         .eq("id", conversationId)
+        .eq("user_id", userId)
         .single();
 
       const lastSymbol = convo?.last_symbol;
@@ -739,7 +803,8 @@ app.post("/chat", async (req, res) => {
     await db
       .from("conversations")
       .update({ last_symbol: symbols[0].symbol })
-      .eq("id", conversationId);
+      .eq("id", conversationId)
+      .eq("user_id", userId);
 
     // ---------------- PORTFOLIO FETCH ----------------
 
@@ -755,16 +820,23 @@ app.post("/chat", async (req, res) => {
       portfolio = null
     }
 
-    await db
-      .from("conversations")
-      .update({ last_symbol: symbols[0].symbol })
-      .eq("id", conversationId);
-
     await db.from("messages").insert({
       conversation_id: conversationId,
       role: "user",
       content: message
     });
+
+    const { data: messages } = await db
+      .from("messages")
+      .select("role, content")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true })
+      .limit(6); // last 6 messages only
+
+    const chatHistory = messages.map(m => ({
+      role: m.role,
+      content: m.content
+    }));
 
     const results =
       await Promise.all(
@@ -773,7 +845,7 @@ app.post("/chat", async (req, res) => {
             s.symbol,
             message,
             portfolio,
-            conversationId
+            chatHistory
           )
         )
       )
@@ -781,7 +853,7 @@ app.post("/chat", async (req, res) => {
     await db.from("messages").insert({
       conversation_id: conversationId,
       role: "assistant",
-      content: JSON.stringify(results)
+      content: results.map(r => r.reply).join("\n\n")
     });
 
     return res.json({

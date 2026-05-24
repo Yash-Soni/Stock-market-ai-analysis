@@ -25,7 +25,13 @@ async function getFundamentals(symbol) {
     console.log("FMP error for", symbol, e.message)
 
     // Always return safe object
-    return empty
+    return {
+      roe: null,
+      debt: null,
+      pe: null,
+      sector: null,
+      revenueGrowth: null
+    }
   }
 }
 
