@@ -1,4 +1,4 @@
-import { TrendingUp, BarChart3, FileText, DollarSign } from "lucide-react"
+import { TrendingUp, BarChart3, FileText, DollarSign, ExternalLink } from "lucide-react"
 import { StructuredAnalysis } from "./analysis-sections"
 import { Sparkline } from "./sparkline"
 import { ScoreGauge } from "./score-gauge"
@@ -326,6 +326,39 @@ export function ChatMessage({ message }: ChatMessageProps) {
                     verdict={analysis.verdict}
                     verdictType={analysis.verdictType}
                   />
+
+                  {/* Broker redirect */}
+                  {(() => {
+                    const isNSE = analysis.symbol.endsWith(".NS")
+                    const isBSE = analysis.symbol.endsWith(".BO")
+                    if (isNSE || isBSE) {
+                      const exchange = isNSE ? "NSE" : "BSE"
+                      const cleanSymbol = analysis.symbol.slice(0, -3)
+                      const zerodhaUrl = `https://kite.zerodha.com/orders/buy?tradingsymbol=${cleanSymbol}&exchange=${exchange}`
+                      return (
+                        <a
+                          href={zerodhaUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-border/70 bg-background/60 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-accent/40 transition-colors"
+                        >
+                          <ExternalLink className="size-3.5 shrink-0" />
+                          Open in Zerodha
+                        </a>
+                      )
+                    }
+                    return (
+                      <button
+                        type="button"
+                        disabled
+                        title="US stock — open in your preferred broker (Vested, INDmoney, Groww)"
+                        className="inline-flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-background/30 px-3 py-2.5 text-sm font-medium text-muted-foreground opacity-50"
+                      >
+                        <ExternalLink className="size-3.5 shrink-0" />
+                        Open in broker
+                      </button>
+                    )
+                  })()}
                 </div>
               )}
 
