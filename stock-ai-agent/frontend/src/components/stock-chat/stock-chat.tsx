@@ -23,7 +23,13 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000"
 
 export function StockChat() {
   const { theme, toggleTheme } = useTheme()
-  const [messages, setMessages] = useState<ChatMessageData[]>([WELCOME_MESSAGE])
+  const [messages, setMessages] = useState<ChatMessageData[]>(() => {
+    try {
+      const saved = localStorage.getItem("chatHistory")
+      if (saved) return JSON.parse(saved)
+    } catch {}
+    return [WELCOME_MESSAGE]
+  })
   const [isLoading, setIsLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -33,14 +39,12 @@ export function StockChat() {
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    fetch(`${API_BASE}zerodha/status`)
+    const controller = new AbortController()
+    fetch(`${API_BASE}zerodha/status`, { signal: controller.signal })
       .then(res => res.json())
       .then(data => setZerodhaConnected(data.connected))
-
-    const saved = localStorage.getItem("chatHistory")
-    if (saved) {
-      setMessages(JSON.parse(saved))
-    }
+      .catch(() => {})
+    return () => controller.abort()
   }, [])
 
   const scrollToBottom = useCallback(() => {
