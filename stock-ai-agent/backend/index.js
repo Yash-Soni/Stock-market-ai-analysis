@@ -27,15 +27,15 @@ const client = new Groq({
   apiKey: process.env.GROQ_API_KEY
 })
 
-app.use(cors({
-  origin: ["http://localhost:5173", "http://127.0.0.1:5173","https://stock-market-ai-analysis.vercel.app/"],
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-  credentials: true,
-  optionsSuccessStatus: 204,
-}))
+// app.use(cors({
+//   origin: ["http://localhost:5173", "http://127.0.0.1:5173","https://stock-market-ai-analysis.vercel.app/"],
+//   methods: ["GET", "POST", "OPTIONS"],
+//   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+//   credentials: true,
+//   optionsSuccessStatus: 204,
+// }))
 
-// app.use(cors({ origin: "*" }))
+app.use(cors({ origin: "*" }))
 app.use(express.json())
 
 async function requireAuth(req, res, next) {
