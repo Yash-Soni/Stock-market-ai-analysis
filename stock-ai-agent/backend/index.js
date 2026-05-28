@@ -570,6 +570,15 @@ const analyzeStock = async (symbol, message, portfolio, chatHistory) => {
               : "Not Available"
           }
 
+          ${
+            fundamentals.pe == null &&
+            fundamentals.roe == null &&
+            fundamentals.debtToEquity == null &&
+            fundamentals.revenueGrowth == null
+              ? "⚠️ No fundamental data is available for this stock from automated sources. In your Long-term View section, explicitly tell the user that PE, ROE, Debt/Equity, and Revenue Growth could not be fetched, and suggest they check Screener.in or Tickertape.in for this data."
+              : ""
+          }
+
           MF Overlap: ${
             mfOverlap
               ? `Yes, held via: ${mfOverlap.join(", ")}`

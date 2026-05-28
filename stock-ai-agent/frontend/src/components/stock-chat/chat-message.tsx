@@ -1,6 +1,5 @@
-import type { ReactNode } from "react"
-import ReactMarkdown from "react-markdown"
 import { TrendingUp, BarChart3, FileText, DollarSign } from "lucide-react"
+import { StructuredAnalysis } from "./analysis-sections"
 import { Sparkline } from "./sparkline"
 import { ScoreGauge } from "./score-gauge"
 import { MetricsCard } from "./metrics-card"
@@ -283,11 +282,41 @@ export function ChatMessage({ message }: ChatMessageProps) {
                       </div>
                     </TabsContent>
                     <TabsContent value="fundamentals" className="mt-2 w-full min-w-0 max-w-full">
-                      <MetricsCard
-                        title="Fundamental Metrics"
-                        icon={<FileText className="size-4" />}
-                        metrics={analysis.fundamentals}
-                      />
+                      {analysis.fundamentals.every(m => m.value === "—") ? (
+                        <div className="rounded-xl border border-border/70 bg-background/50 px-4 py-5 min-w-0 text-center space-y-2">
+                          <FileText className="size-5 text-muted-foreground mx-auto" />
+                          <p className="text-sm font-medium text-foreground">
+                            Fundamentals not available for this listing
+                          </p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            Check{" "}
+                            <a
+                              href="https://www.screener.in"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary underline underline-offset-2 hover:opacity-80"
+                            >
+                              Screener.in
+                            </a>
+                            {" "}or{" "}
+                            <a
+                              href="https://www.tickertape.in"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary underline underline-offset-2 hover:opacity-80"
+                            >
+                              Tickertape
+                            </a>
+                            {" "}for PE, ROE, Debt/Equity, and Revenue Growth data.
+                          </p>
+                        </div>
+                      ) : (
+                        <MetricsCard
+                          title="Fundamental Metrics"
+                          icon={<FileText className="size-4" />}
+                          metrics={analysis.fundamentals}
+                        />
+                      )}
                     </TabsContent>
                   </Tabs>
 
@@ -308,20 +337,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
                     — Full Analysis
                     {message.stockAnalyses?.length && message.stockAnalyses.length > 1 ? ` · ${analysis.symbol}` : ""}
                   </h4>
-                  <div className="text-sm text-foreground/90 leading-relaxed prose prose-sm max-w-full min-w-0 [&_*]:max-w-full [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:wrap-break-word [&_p]:my-2 [&_p]:wrap-break-word [&_ul]:list-disc [&_ul]:list-outside [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:list-outside [&_ol]:pl-4 [&_li]:wrap-break-word [&_code]:wrap-break-word">
-                    <ReactMarkdown
-                      components={{
-                        h3: ({ children }: { children?: ReactNode }) => <h3 className="font-semibold text-foreground text-base mt-4 mb-2 first:mt-0 wrap-break-word">{children}</h3>,
-                        p: ({ children }: { children?: ReactNode }) => <p className="my-2 wrap-break-word">{children}</p>,
-                        ul: ({ children }: { children?: ReactNode }) => <ul className="list-disc list-outside my-2 space-y-1 pl-4">{children}</ul>,
-                        ol: ({ children }: { children?: ReactNode }) => <ol className="list-decimal list-outside my-2 space-y-1 pl-4">{children}</ol>,
-                        li: ({ children }: { children?: ReactNode }) => <li className="wrap-break-word">{children}</li>,
-                        strong: ({ children }: { children?: ReactNode }) => <strong className="font-semibold wrap-break-word">{children}</strong>,
-                      }}
-                    >
-                      {analysis.analysisMarkdown}
-                    </ReactMarkdown>
-                  </div>
+                  <StructuredAnalysis markdown={analysis.analysisMarkdown} />
                 </div>
               )}
             </div>
