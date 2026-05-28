@@ -92,14 +92,20 @@ export function MacroSummary() {
   useEffect(() => {
     let cancelled = false
     async function load() {
+      const url = `${API_BASE}world-events`
+      // console.log("[MacroSummary] fetching:", url)
       try {
-        const res = await fetch(`${API_BASE}world-events`)
+        const res = await fetch(url)
+        console.log("[MacroSummary] response status:", res.status, res.ok ? "OK" : "NOT OK")
         if (!res.ok || cancelled) return
         const data = await res.json()
+        console.log("[MacroSummary] raw data from server:", data)
         if (cancelled) return
         const list = parseMacroEvents(data)
+        console.log("[MacroSummary] parsed events count:", list.length)
         setEvents(list)
-      } catch {
+      } catch (err) {
+        console.error("[MacroSummary] fetch error:", err)
         if (!cancelled) setEvents([])
       } finally {
         if (!cancelled) setLoading(false)

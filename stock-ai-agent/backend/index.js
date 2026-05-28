@@ -901,8 +901,10 @@ app.post("/chat", requireAuth, chatLimiter, async (req, res) => {
 app.get("/world-events", async(req,res)=>{
   try{
     const events = await getMacroEvents()
+    console.log("[/world-events] sending", events.length, "event(s) to client")
     res.json(events)
   }catch(err){
+    console.error("[/world-events] error:", err.message)
     res.status(500).json({
       error:"Failed to fetch world events"
     })

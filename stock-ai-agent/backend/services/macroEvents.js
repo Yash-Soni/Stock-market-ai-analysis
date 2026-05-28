@@ -14,11 +14,13 @@ let cache = {
 const CACHE_DURATION = 30 * 60 * 1000   // 30 minutes
 
 async function fetchNews() {
+  console.log("[MacroEvents] fetchNews: NEWS_API_KEY present?", !!process.env.NEWS_API_KEY)
   if (!process.env.NEWS_API_KEY) {
-    console.warn("Macro events: NEWS_API_KEY missing, skipping news fetch")
+    console.warn("[MacroEvents] fetchNews: NEWS_API_KEY missing — skipping")
     return []
   }
   try {
+    console.log("[MacroEvents] fetchNews: sending request to NewsAPI")
     const res = await axios.get(
       "https://newsapi.org/v2/everything",
       {
@@ -32,9 +34,13 @@ async function fetchNews() {
       }
     )
     const articles = res.data?.articles
+    console.log("[MacroEvents] fetchNews: HTTP", res.status, "| articles received:", Array.isArray(articles) ? articles.length : `non-array (${typeof articles})`)
+    if (res.data?.status === "error") {
+      console.warn("[MacroEvents] fetchNews: NewsAPI error response:", res.data?.message)
+    }
     return Array.isArray(articles) ? articles.slice(0, 15) : []
   } catch (err) {
-    console.warn("Macro events: fetchNews failed", err.message)
+    console.warn("[MacroEvents] fetchNews: request failed —", err.message)
     return []
   }
 }
@@ -162,6 +168,8 @@ function normalizeImpact(impact){
 
 async function generateMacroEvents(clusters){
 
+  console.log("[MacroEvents] generateMacroEvents: calling LLM with", clusters.length, "cluster(s)")
+
   const completion =
     await client.chat.completions.create({
       model: "llama-3.3-70b-versatile",
@@ -198,11 +206,15 @@ async function generateMacroEvents(clusters){
       ]
     })
 
+  const raw = completion.choices[0].message.content
+  console.log("[MacroEvents] generateMacroEvents: raw LLM response (first 300 chars):", raw?.slice(0, 300))
+
   try{
-    return JSON.parse(
-      completion.choices[0].message.content
-    )
-  }catch{
+    const parsed = JSON.parse(raw)
+    console.log("[MacroEvents] generateMacroEvents: parsed", Array.isArray(parsed) ? parsed.length : "non-array", "event(s)")
+    return parsed
+  }catch(e){
+    console.warn("[MacroEvents] generateMacroEvents: JSON.parse failed —", e.message, "| raw:", raw?.slice(0, 200))
     return []
   }
 }
@@ -233,43 +245,51 @@ async function getMacroEvents(){
     cache.events &&
     now - cache.timestamp < CACHE_DURATION
   ){
+    console.log("[MacroEvents] getMacroEvents: cache hit —", cache.events.length, "event(s), age", Math.round((now - cache.timestamp) / 1000), "s")
     return cache.events
   }
 
+  console.log("[MacroEvents] getMacroEvents: cache miss — fetching fresh events")
+
   const news = await fetchNews()
+  console.log("[MacroEvents] getMacroEvents: fetchNews returned", news.length, "article(s)")
 
   // Step 1: extract headlines (filter out missing titles)
   const headlines = news
     .map((a) => a && a.title)
     .filter(Boolean)
 
+  console.log("[MacroEvents] getMacroEvents: headlines extracted:", headlines.length)
+
   if (headlines.length === 0) {
-    console.warn("Macro events: no headlines, returning empty")
+    console.warn("[MacroEvents] getMacroEvents: no headlines — returning empty")
     cache = { events: [], timestamp: now }
     return []
   }
 
   // Step 2: cluster similar headlines
   const clusters = clusterHeadlines(headlines)
+  console.log("[MacroEvents] getMacroEvents: clusters formed:", clusters.length)
+
   if (clusters.length === 0) {
+    console.warn("[MacroEvents] getMacroEvents: no clusters — returning empty")
     cache = { events: [], timestamp: now }
     return []
   }
 
-   // ✅ SINGLE LLM CALL
-   const events = await withRetry(() =>
+  const events = await withRetry(() =>
     generateMacroEvents(clusters)
   )
-   console.log('events happening', events);
-   const topEvents = events.slice(0,10)
- 
-   cache = {
-     events: topEvents,
-     timestamp: now
-   }
-   console.log('topEvents', topEvents);
- 
-   return topEvents
+
+  const topEvents = Array.isArray(events) ? events.slice(0, 10) : []
+  console.log("[MacroEvents] getMacroEvents: final topEvents count:", topEvents.length)
+
+  cache = {
+    events: topEvents,
+    timestamp: now
+  }
+
+  return topEvents
 }
 
 module.exports = { getMacroEvents }
