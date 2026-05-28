@@ -22,7 +22,7 @@ async function getFundamentals(symbol) {
     }
 
   } catch (e) {
-    console.log("FMP error for", symbol, e.message)
+    console.error("FMP error for", symbol, e.message)
 
     // Always return safe object
     return {

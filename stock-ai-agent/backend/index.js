@@ -4,7 +4,7 @@ const express = require("express")
 const axios = require("axios")
 const Groq = require("groq-sdk")
 const fs = require("fs")
-const memory = require("./memory")
+const rateLimit = require("express-rate-limit")
 const zerodha = require("./zerodha")
 const portfolioSvc = require("./portfolioService")
 const { db } = require("./services/client")
@@ -28,7 +28,7 @@ const client = new Groq({
 })
 
 app.use(cors({
-  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  origin: ["http://localhost:5173", "http://127.0.0.1:5173","https://stock-market-ai-analysis.vercel.app/"],
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   credentials: true,
@@ -602,7 +602,20 @@ const analyzeStock = async (symbol, message, portfolio, chatHistory) => {
   }
 }
 
-app.post("/chat", requireAuth, async (req, res) => {
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: "Too many requests. You can send 5 messages per minute. Please wait and try again."
+    })
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+app.post("/chat", requireAuth, chatLimiter, async (req, res) => {
   try {
 
     let { message, conversationId } = req.body
