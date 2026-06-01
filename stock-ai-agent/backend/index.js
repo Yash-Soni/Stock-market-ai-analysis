@@ -122,65 +122,103 @@ async function getFundamentals(symbol) {
 
 const ALLOWED_INTENTS = ["STOCK", "PORTFOLIO", "MARKET", "GENERAL"]
 
-const FOLLOW_UP_PRONOUNS = /\b(it|this|that|the stock|the company|its)\b/i
+// Returns { intent, confidence, ticker }
+// confidence < 0.7 → routed to GENERAL (safe default)
+// ticker → company name/symbol the classifier spotted, null otherwise
+async function classifyIntent(message, { lastSymbol = null } = {}) {
+  const completion = await client.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    temperature: 0,
+    messages: [
+      {
+        role: "system",
+        content: `
+You are an intent classifier for a stock analysis app. Classify the user message and return a JSON object.
 
-async function classifyIntent(message, { hasLastSymbol = false } = {}) {
+INTENT DEFINITIONS:
 
-  // Heuristic: short follow-up referencing a previous stock → STOCK
-  if (hasLastSymbol && FOLLOW_UP_PRONOUNS.test(message) && !/\bmy (portfolio|holdings|allocation)\b/i.test(message)) {
-    return "STOCK"
-  }
+STOCK — User asks about a SPECIFIC named company, ticker, or stock.
+  Positive examples:
+  - "Analyze INFY"                        → STOCK, ticker: "INFY", confidence: 0.99
+  - "Should I buy Reliance?"              → STOCK, ticker: "Reliance", confidence: 0.97
+  - "Is Tesla overvalued?"                → STOCK, ticker: "Tesla", confidence: 0.97
+  - "Target price for TCS?"               → STOCK, ticker: "TCS", confidence: 0.98
+  - "Should I sell it?" (follow-up)       → STOCK, ticker: null, confidence: 0.92
+  - "Is this a good buy?" (follow-up)     → STOCK, ticker: null, confidence: 0.90
+  - "Worth holding?" (follow-up)          → STOCK, ticker: null, confidence: 0.88
+  Negative examples (NOT STOCK):
+  - "What makes a stock a good buy?"      → GENERAL (concept, no company named)
+  - "Is long term investing worth it?"    → GENERAL (concept, not a company)
+  - "What is a PE ratio?"                 → GENERAL (definition)
 
-  const intentCheck =
-    await client.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      temperature: 0,
-      messages: [
-        {
-          role: "system",
-          content: `
-You classify a user's stock-app message into EXACTLY one of:
+PORTFOLIO — User asks about their OWN personal holdings as a whole.
+  Positive examples:
+  - "How is my portfolio doing?"          → PORTFOLIO, confidence: 0.97
+  - "Am I too concentrated in IT?"        → PORTFOLIO, confidence: 0.90
+  - "Rebalance my holdings"               → PORTFOLIO, confidence: 0.97
+  Negative examples (NOT PORTFOLIO):
+  - "What is portfolio diversification?"  → GENERAL (a concept, not personal holdings)
+  - "How do I build a good portfolio?"    → GENERAL (educational question)
 
-STOCK     – about a single company / ticker / stock, including buy / sell / hold / target / risk / what-if follow-ups
-PORTFOLIO – about the user's OWN holdings as a whole (allocation, diversification, "my portfolio", "my holdings", overall risk of MY portfolio, rebalance)
-MARKET    – broad indices: Nifty, Sensex, S&P 500, Nasdaq, smallcap, midcap, sector indices
-GENERAL   – anything else (greetings, definitions, general finance questions)
+MARKET — User asks about a broad market index.
+  Positive examples:
+  - "Nifty trend today"                   → MARKET, confidence: 0.97
+  - "Is S&P 500 overbought?"              → MARKET, confidence: 0.95
+  Negative examples (NOT MARKET):
+  - "What is the Nifty?"                  → GENERAL (definition, not analysis request)
+
+GENERAL — Conceptual, educational, definitional, greeting, or anything not about a specific named stock/portfolio/index.
+  This is the correct category for: finance concepts, investing education, beginner questions,
+  how-to questions, comparisons of concepts, greetings, thank-yous.
+  Positive examples:
+  - "What is long term investing?"        → GENERAL, confidence: 0.99
+  - "I'm a beginner, how do I start?"     → GENERAL, confidence: 0.99
+  - "Explain RSI to me"                   → GENERAL, confidence: 0.98
+  - "What is a PE ratio?"                 → GENERAL, confidence: 0.99
+  - "Difference between stocks and bonds?"→ GENERAL, confidence: 0.98
+  - "What is SIP?"                        → GENERAL, confidence: 0.99
+  - "How do I read a balance sheet?"      → GENERAL, confidence: 0.98
+  - "Is investing risky?"                 → GENERAL, confidence: 0.97
+  - "What is diversification?"            → GENERAL, confidence: 0.99
+  - "What is the best investing strategy?"→ GENERAL, confidence: 0.97
+  - "What is inflation?"                  → GENERAL, confidence: 0.99
+  - "Hello" / "Hi" / "Thanks"            → GENERAL, confidence: 0.99
 
 CRITICAL RULES:
-- Follow-ups using pronouns ("it", "this", "that", "the stock") refer to a previous stock → STOCK.
-- "Should I sell it", "What if I sell it", "Is it a buy", "Worth holding?", "Target price", "Sell or hold" → STOCK.
-- PORTFOLIO requires explicit portfolio words like: "my portfolio", "my holdings", "my allocation", "rebalance my", "diversification of my portfolio", "sector exposure of my portfolio".
-- If unsure between STOCK and PORTFOLIO, choose STOCK.
+1. If no specific company name or ticker is present, default to GENERAL — never infer a stock from conversation history.
+2. Conceptual questions ("what is X", "how does Y work", "explain Z") are ALWAYS GENERAL even if they mention a financial term.
+3. Only set confidence > 0.85 for STOCK if a company name or ticker is clearly present in THIS message.
+4. For ambiguous cases, lower confidence below 0.7 — they will be safely routed to GENERAL.
+5. The ticker field should be the raw company name or ticker from the message, or null if none is present.
 
-Examples:
-- "Analyze ORCL"            → STOCK
-- "Should I sell it"        → STOCK
-- "What if I sell it"       → STOCK
-- "Is this a good buy"      → STOCK
-- "Target price for TCS"    → STOCK
-- "How is my portfolio"     → PORTFOLIO
-- "Rebalance my holdings"   → PORTFOLIO
-- "Nifty trend today"       → MARKET
-- "Hi"                      → GENERAL
+Return ONLY this JSON (no markdown, no explanation):
+{"intent":"STOCK","confidence":0.95,"ticker":"INFY"}
+        `.trim()
+      },
+      { role: "user", content: message }
+    ]
+  })
 
-Reply with ONLY one word: STOCK, PORTFOLIO, MARKET, or GENERAL.
-          `.trim()
-        },
-        {
-          role: "user",
-          content: message
-        }
-      ]
-    })
+  const raw = completion.choices[0].message.content.trim()
 
-  const raw = intentCheck
-    .choices[0]
-    .message
-    .content
-    .trim()
-    .toUpperCase()
-
-  return ALLOWED_INTENTS.includes(raw) ? raw : "STOCK"
+  try {
+    const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim()
+    const parsed = JSON.parse(jsonStr)
+    const intent = ALLOWED_INTENTS.includes(parsed.intent?.toUpperCase())
+      ? parsed.intent.toUpperCase()
+      : "GENERAL"
+    const confidence = typeof parsed.confidence === "number"
+      ? Math.min(1, Math.max(0, parsed.confidence))
+      : 0.5
+    const ticker = typeof parsed.ticker === "string" && parsed.ticker.trim()
+      ? parsed.ticker.trim()
+      : null
+    // Low confidence → route to GENERAL rather than guessing
+    return { intent: confidence < 0.7 ? "GENERAL" : intent, confidence, ticker }
+  } catch {
+    // JSON parse failure → safe default
+    return { intent: "GENERAL", confidence: 0.5, ticker: null }
+  }
 }
 
 // async function extractCompanyEntity(message) {
@@ -247,6 +285,38 @@ async function extractCompanyEntities(message) {
   } catch {
     return []
   }
+}
+
+async function handleGeneralQuery(message, chatHistory) {
+  const completion = await client.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    messages: [
+      {
+        role: "system",
+        content: `
+You are a knowledgeable personal finance and investing advisor.
+
+Answer the user's question clearly and helpfully. You may cover:
+- Investing concepts and definitions (stocks, bonds, mutual funds, ETFs, SIPs, REITs)
+- How financial instruments and markets work
+- Beginner guidance and how to get started investing
+- Risk management principles and strategies
+- General market education and financial literacy
+
+Guidelines:
+- Keep answers concise: 3–5 short paragraphs max.
+- Use plain, friendly language. Avoid unnecessary jargon.
+- Do not fabricate or reference specific stock prices, analyst targets, or real-time data.
+- If the user is a beginner, be encouraging and practical.
+- If the question is a greeting or thanks, respond warmly and briefly.
+- Do NOT analyze any specific stock unless the user explicitly names one in this message.
+        `.trim()
+      },
+      ...chatHistory,
+      { role: "user", content: message }
+    ]
+  })
+  return completion.choices[0].message.content
 }
 
 function getMFOverlap(symbol) {
@@ -669,10 +739,10 @@ app.post("/chat", requireAuth, chatLimiter, async (req, res) => {
       .eq("user_id", userId)
       .single()
 
-    const intent = await classifyIntent(message, {
-      hasLastSymbol: !!convoForIntent?.last_symbol
+    const classification = await classifyIntent(message, {
+      lastSymbol: convoForIntent?.last_symbol ?? null
     })
-    console.log('intent', intent);
+    const { intent, confidence, ticker: classifiedTicker } = classification
 
     // ---------------- PORTFOLIO ----------------
     if (intent === "PORTFOLIO") {
@@ -772,47 +842,59 @@ app.post("/chat", requireAuth, chatLimiter, async (req, res) => {
       })
     }
 
-    // ---------------- SYMBOL RESOLUTION ----------------
+    // ---------------- GENERAL ----------------
+    if (intent === "GENERAL") {
+      await db.from("messages").insert({
+        conversation_id: conversationId,
+        role: "user",
+        content: message
+      })
+
+      const { data: histMsgs } = await db
+        .from("messages")
+        .select("role, content")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true })
+        .limit(6)
+
+      const chatHistory = (histMsgs || []).map(m => ({ role: m.role, content: m.content }))
+      const reply = await handleGeneralQuery(message, chatHistory)
+
+      await db.from("messages").insert({
+        conversation_id: conversationId,
+        role: "assistant",
+        content: reply
+      })
+
+      return res.json({ reply, conversationId })
+    }
+
+    // ---------------- SYMBOL RESOLUTION (STOCK) ----------------
 
     let symbols = []
 
-    // 2️⃣ Otherwise extract from message
+    // 1️⃣ Use classifier-provided ticker as first candidate (avoids a second LLM call)
+    if (classifiedTicker) {
+      const resolved = await resolveSymbol(classifiedTicker)
+      if (resolved) symbols.push({ entity: classifiedTicker, symbol: resolved })
+    }
+
+    // 2️⃣ Extract entities from message when classifier gave no ticker
     if (symbols.length === 0) {
-      const entities =
-        await extractCompanyEntities(message)
+      const entities = await extractCompanyEntities(message)
 
       for (const entity of entities) {
-
-        const resolved =
-          await resolveSymbol(entity)
-        console.log('resolved symbol', resolved, 'for entity', entity);
-
-        if (resolved) {
-          symbols.push({
-            entity,
-            symbol: resolved
-          })
-        }
+        const resolved = await resolveSymbol(entity)
+        if (resolved) symbols.push({ entity, symbol: resolved })
       }
     }
 
-    // 3️⃣ fallback to conversation memory
-    if (symbols.length === 0) {
-
-      const { data: convo } = await db
-        .from("conversations")
-        .select("last_symbol")
-        .eq("id", conversationId)
-        .eq("user_id", userId)
-        .single();
-
-      const lastSymbol = convo?.last_symbol;
-
+    // 3️⃣ Fallback to last_symbol ONLY for genuine follow-ups:
+    //    STOCK intent, no named ticker in this message, and classifier was highly confident
+    if (symbols.length === 0 && classifiedTicker === null && confidence >= 0.85) {
+      const lastSymbol = convoForIntent?.last_symbol
       if (lastSymbol) {
-        symbols.push({
-          entity: lastSymbol,
-          symbol: lastSymbol
-        })
+        symbols.push({ entity: lastSymbol, symbol: lastSymbol })
       }
     }
 
