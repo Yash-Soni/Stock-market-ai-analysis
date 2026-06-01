@@ -1,6 +1,0 @@
-fastapi
-uvicorn[standard]
-pandas
-pandas-ta
-yfinance
-yahooquery
