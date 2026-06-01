@@ -1,17 +1,12 @@
-const axios = require("axios")
 const fmp = require("./fmpService")
-const API_BASE = process.env.VITE_API_BASE || "http://localhost:3000"
+const { getHoldings } = require("./zerodha.service")
 
 async function analyzePortfolioLogic() {
-  let holdings = null
-
+  let holdings
   try {
-    const response = await axios.get(
-      `${API_BASE}portfolio`
-    )
-    holdings = response.data
-  } catch (e) {
-    throw new Error("Not connected")
+    holdings = await getHoldings()
+  } catch (err) {
+    throw new Error(err.message || "Zerodha session expired. Please reconnect.")
   }
 
   let totalValue = 0
@@ -19,7 +14,6 @@ async function analyzePortfolioLogic() {
   const enriched = holdings.map(h => {
     const value = h.quantity * h.last_price
     totalValue += value
-
     return {
       symbol: h.tradingsymbol,
       value,
@@ -34,12 +28,10 @@ async function analyzePortfolioLogic() {
     current: h.value
   }))
 
-  let portfolioMetrics = []
+  const portfolioMetrics = []
 
-  for (let h of weights) {
-
+  for (const h of weights) {
     const fund = await fmp.getFundamentals(h.symbol)
-
     portfolioMetrics.push({
       symbol: h.symbol,
       weight: h.weight,
@@ -55,6 +47,4 @@ async function analyzePortfolioLogic() {
   return portfolioMetrics
 }
 
-module.exports = {
-  analyzePortfolioLogic
-}
+module.exports = { analyzePortfolioLogic }

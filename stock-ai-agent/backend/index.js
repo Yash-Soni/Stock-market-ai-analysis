@@ -681,9 +681,9 @@ app.post("/chat", requireAuth, chatLimiter, async (req, res) => {
       try {
         weights = await portfolioSvc.analyzePortfolioLogic()
       } catch (err) {
-        if (err.message === "Not connected") {
+        if (err.message?.includes("reconnect") || err.message?.includes("Not connected")) {
           return res.json({
-            reply: "I can't access your portfolio because your Zerodha account isn't connected. Click \"Connect Zerodha\" and try again."
+            reply: "Zerodha session expired. Please reconnect your Zerodha account and try again."
           })
         }
         throw err
@@ -982,8 +982,11 @@ app.get("/analyze-portfolio", async (req, res) => {
     })
 
   } catch (e) {
-    res.status(401).json({
-      error: "Please connect Zerodha first"
+    const isSessionError = e.message?.includes("reconnect") || e.message?.includes("Not connected")
+    res.status(isSessionError ? 401 : 500).json({
+      error: isSessionError
+        ? "Zerodha session expired. Please reconnect."
+        : "Failed to analyze portfolio. Please try again."
     })
   }
 })

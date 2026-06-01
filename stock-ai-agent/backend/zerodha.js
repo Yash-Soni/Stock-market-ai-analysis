@@ -1,57 +1,41 @@
-const KiteConnect = require("kiteconnect").KiteConnect
-
-require("dotenv").config()
-
-const apiKey = process.env.KITE_API_KEY
-const apiSecret = process.env.KITE_API_SECRET
-
-const kc = new KiteConnect({ api_key: apiKey })
-
-let accessToken = null
+const zerodhaService = require("./zerodha.service")
 
 function login(req, res) {
-  const loginUrl = kc.getLoginURL()
+  const loginUrl = zerodhaService.getLoginURL()
   res.redirect(loginUrl)
 }
 
 function status(req, res) {
-  res.json({
-    connected: !!accessToken
-  })
+  res.json({ connected: zerodhaService.isConnected() })
 }
 
 async function callback(req, res) {
   const { request_token } = req.query
-
-  const session = await kc.generateSession(
-    request_token,
-    apiSecret
-  )
-
-  accessToken = session.access_token
-  kc.setAccessToken(accessToken)
-
-  res.send("Zerodha Connected!")
+  try {
+    await zerodhaService.generateSession(request_token)
+    res.send("Zerodha Connected!")
+  } catch (err) {
+    console.error("[Zerodha] callback error:", err.message)
+    res.status(500).json({ error: "Failed to complete Zerodha login. Please try again." })
+  }
 }
 
 async function getPortfolio(req, res) {
-  if (!accessToken) {
-    return res.status(401).send("Not connected")
+  try {
+    const holdings = await zerodhaService.getHoldings()
+    res.json(holdings)
+  } catch (err) {
+    if (err.code === "ZERODHA_NOT_CONNECTED" || err.code === "ZERODHA_SESSION_EXPIRED") {
+      return res.status(401).json({ error: err.message })
+    }
+    console.error("[Zerodha] getPortfolio error:", err.message)
+    res.status(500).json({ error: "Failed to fetch portfolio. Please try again." })
   }
-
-  const holdings = await kc.getHoldings()
-  res.json(holdings)
 }
 
 function disconnect(req, res) {
-  accessToken = null
-  res.send("Disconnected")
+  zerodhaService.clearSession()
+  res.json({ disconnected: true })
 }
 
-module.exports = {
-  login,
-  callback,
-  getPortfolio,
-  disconnect,
-  status
-}
+module.exports = { login, callback, getPortfolio, disconnect, status }

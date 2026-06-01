@@ -6,7 +6,7 @@ import { ChatSidebar } from "./chat-sidebar"
 import { mapBackendResponseToStockAnalyses } from "../../lib/backend-mapper"
 import { QUICK_SUGGESTIONS } from "../../lib/sample-data"
 import { useTheme } from "../../lib/use-theme"
-import { TrendingUp, PanelLeftClose, PanelLeft } from "lucide-react"
+import { TrendingUp, PanelLeftClose, PanelLeft, LogOut, UserRound } from "lucide-react"
 import { MacroSummary } from "./macro-summary"
 import { AuthContext } from "../../context/AuthContext"
 import { supabase } from "../../lib/supabase"
@@ -273,10 +273,22 @@ export function StockChat() {
               <span className="size-1.5 shrink-0 rounded-full bg-success animate-pulse" />
               Live
             </span>
-            {
-              user && <button onClick={() => supabase.auth.signOut()}>
-              Logout
-            </button>}
+            {user && (
+              <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background/80 px-2 py-1 min-w-0">
+                <UserRound className="size-3 shrink-0 text-muted-foreground" />
+                <span className="text-[10px] sm:text-xs text-foreground truncate max-w-[8rem] sm:max-w-[14rem]">
+                  {user.email}
+                </span>
+                <button
+                  type="button"
+                  title="Sign out"
+                  onClick={() => supabase.auth.signOut()}
+                  className="ml-0.5 shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <LogOut className="size-3 sm:size-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
