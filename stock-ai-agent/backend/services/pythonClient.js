@@ -36,7 +36,7 @@ async function getCapabilities() {
  * @param {object} [parameters]  — Optional extra params forwarded to the registry functions
  * @returns {Promise<{ ticker: string, computed: Record<string, any> }>}
  */
-async function compute(ticker, indicators, parameters = {}) {
+async function compute(ticker, indicators, parameters = {}, ctx = {}) {
   const t0 = Date.now()
 
   try {
@@ -58,7 +58,8 @@ async function compute(ticker, indicators, parameters = {}) {
       latency_ms,
       success: true,
       indicators_returned,
-      null_indicators
+      null_indicators,
+      conversation_id: ctx.conversation_id ?? null
     })
 
     return res.data
@@ -75,7 +76,8 @@ async function compute(ticker, indicators, parameters = {}) {
       success: false,
       indicators_returned: [],
       null_indicators: [],
-      error: detail
+      error: detail,
+      conversation_id: ctx.conversation_id ?? null
     })
 
     const e    = new Error(detail)
@@ -99,8 +101,9 @@ async function compute(ticker, indicators, parameters = {}) {
  * @param {string} ticker — Canonical exchange-suffixed symbol e.g. "INFY.NS"
  * @returns {Promise<{ pe, roe, debtToEquity, revenueGrowth, sector }>}
  */
-async function getFundamentals(ticker) {
+async function getFundamentals(ticker, ctx = {}) {
   const t0 = Date.now()
+  const cid = ctx.conversation_id ?? null
   try {
     const res = await axios.get(`${TA_BASE_URL}/fundamentals`, {
       params: { symbol: ticker },
@@ -110,15 +113,15 @@ async function getFundamentals(ticker) {
     const data = res.data || {}
 
     if (data.error) {
-      pythonCall({ ticker, indicators: ['fundamentals'], parameters: {}, latency_ms, success: false, indicators_returned: [], null_indicators: [], error: data.error })
+      pythonCall({ ticker, indicators: ['fundamentals'], parameters: {}, latency_ms, success: false, indicators_returned: [], null_indicators: [], error: data.error, conversation_id: cid })
       return { pe: null, roe: null, debtToEquity: null, revenueGrowth: null, sector: null }
     }
 
-    pythonCall({ ticker, indicators: ['fundamentals'], parameters: {}, latency_ms, success: true, indicators_returned: ['pe', 'roe', 'debtToEquity', 'revenueGrowth'], null_indicators: [] })
+    pythonCall({ ticker, indicators: ['fundamentals'], parameters: {}, latency_ms, success: true, indicators_returned: ['pe', 'roe', 'debtToEquity', 'revenueGrowth'], null_indicators: [], conversation_id: cid })
     return { pe: data.pe ?? null, roe: data.roe ?? null, debtToEquity: data.debtToEquity ?? null, revenueGrowth: data.revenueGrowth ?? null, sector: data.sector ?? null }
   } catch (err) {
     const latency_ms = Date.now() - t0
-    pythonCall({ ticker, indicators: ['fundamentals'], parameters: {}, latency_ms, success: false, indicators_returned: [], null_indicators: [], error: err.message })
+    pythonCall({ ticker, indicators: ['fundamentals'], parameters: {}, latency_ms, success: false, indicators_returned: [], null_indicators: [], error: err.message, conversation_id: cid })
     return { pe: null, roe: null, debtToEquity: null, revenueGrowth: null, sector: null }
   }
 }

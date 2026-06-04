@@ -96,4 +96,52 @@ Evaluate:
   }
 }
 
-module.exports = { handlePortfolio }
+/**
+ * Standalone portfolio analysis for the GET /analyze-portfolio endpoint.
+ * Computes sector allocation, average quality metrics, and an LLM narrative.
+ * Extracted verbatim from the old index.js /analyze-portfolio handler.
+ *
+ * @param {string|null} userId — For log context only
+ * @returns {Promise<{ analysis: string }>}
+ */
+async function handlePortfolioAnalysis(userId) {
+  const t0 = Date.now()
+  const weights = await portfolioSvc.analyzePortfolioLogic()
+
+  const avgROE  = weights.reduce((sum, s) => sum + (s.roe  || 0), 0) / weights.length
+  const avgDebt = weights.reduce((sum, s) => sum + (s.debt || 0), 0) / weights.length
+  const sectorMap = {}
+  weights.forEach(s => {
+    if (!sectorMap[s.sector]) sectorMap[s.sector] = 0
+    sectorMap[s.sector] += parseFloat(s.weight)
+  })
+
+  const systemPrompt = `You are a portfolio advisor.\nAnalyze allocation risk and diversification.`
+  const userContent  = `Portfolio Metrics:\n\nAverage ROE:\n${avgROE.toFixed(2)}\n\nAverage Debt:\n${avgDebt.toFixed(2)}\n\nSector Allocation:\n${JSON.stringify(sectorMap)}\n\nHoldings:\n${JSON.stringify(weights)}\n\nEvaluate:\n- Financial strength\n- Leverage risk\n- Sector concentration\n- Growth vs Value tilt`
+
+  const llmT0 = Date.now()
+  const completion = await getGroqClient().chat.completions.create({
+    model: MODEL,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user',   content: userContent }
+    ]
+  })
+  const llmLatency = Date.now() - llmT0
+  const usage      = completion.usage ?? {}
+
+  llmCall({
+    provider: 'groq', model: MODEL, purpose: 'portfolio_analysis',
+    input_tokens:  usage.prompt_tokens  ?? countTokens(systemPrompt + userContent).count,
+    input_tokens_approximate:  !usage.prompt_tokens,
+    output_tokens: usage.completion_tokens ?? countTokens(completion.choices[0].message.content).count,
+    output_tokens_approximate: !usage.completion_tokens,
+    latency_ms: llmLatency, user_id: userId, conversation_id: null,
+    cached: false, success: true
+  })
+  handlerDispatch({ user_id: userId, conversation_id: null, handler: 'portfolio', response_type: 'data_card', total_latency_ms: Date.now() - t0 })
+
+  return { analysis: completion.choices[0].message.content }
+}
+
+module.exports = { handlePortfolio, handlePortfolioAnalysis }

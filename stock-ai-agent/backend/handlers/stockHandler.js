@@ -137,12 +137,13 @@ async function handleStock(routerOutput, lastSymbol, userId, conversationId, cha
   if (indicators.length === 0) indicators = BUNDLE_EXPANSION  // safe default
 
   // ── 3. Fetch data in parallel ───────────────────────────────────────────
+  const computeCtx = { conversation_id: conversationId }
   const fetchPromises = [
-    compute(ticker, indicators, routerOutput.parameters || {}),
+    compute(ticker, indicators, routerOutput.parameters || {}, computeCtx),
     getMacroEvents()
   ]
   if (isComprehensive) {
-    fetchPromises.push(getFundamentals(ticker))
+    fetchPromises.push(getFundamentals(ticker, computeCtx))
     fetchPromises.push(_getPortfolioSectorAllocation())
   }
 

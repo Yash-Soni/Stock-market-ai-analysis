@@ -58,8 +58,9 @@ async function handleMarket(routerOutput, userId, conversationId) {
 
   const isIndex = indexSymbol.startsWith('^')
 
+  const computeCtx = { conversation_id: conversationId }
   const [computeResult, macroEvents] = await Promise.all([
-    compute(indexSymbol, INDEX_EXPAND, {}),
+    compute(indexSymbol, INDEX_EXPAND, {}, computeCtx),
     getMacroEvents()
   ])
 
@@ -67,7 +68,7 @@ async function handleMarket(routerOutput, userId, conversationId) {
   const macroSummary = _buildMacroSummary(macroEvents)
 
   // Indices don't have fundamentals — pass null to skip that section
-  const fundamentals = isIndex ? null : await getFundamentals(indexSymbol)
+  const fundamentals = isIndex ? null : await getFundamentals(indexSymbol, computeCtx)
 
   const score = 0   // no buy/sell scoring for indices
   const risk  = 0
