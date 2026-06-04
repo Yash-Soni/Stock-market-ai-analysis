@@ -1073,8 +1073,118 @@ app.get("/analyze-portfolio", async (req, res) => {
   }
 })
 
+// ─────────────────────────────────────────────────────────────────────────────
+// /v2/chat — new architecture (Router → handler dispatch → response envelope)
+// Old /chat stays alive until Phase 4.
+// ─────────────────────────────────────────────────────────────────────────────
+const { route: routerRoute }      = require("./router/router")
+const { getConversationContext, updateLastSymbol, saveMessagePair } = require("./services/conversationService")
+const { handleStock }             = require("./handlers/stockHandler")
+const { handleGeneral }           = require("./handlers/generalHandler")
+const { handlePortfolio }         = require("./handlers/portfolioHandler")
+const { handleMarket }            = require("./handlers/marketHandler")
+const { handleClarify }           = require("./handlers/clarifyHandler")
+const { startupPromptSizes }      = require("./lib/logger")
+const { buildRouterPrompt }       = require("./router/routerPrompt")
+const { STATIC_PROMPT: COMP_STATIC } = require("./prompts/comprehensivePrompt")
+const { STATIC_RULES: FOCS_STATIC }  = require("./prompts/focusedPrompt")
+
+app.post("/v2/chat", requireAuth, chatLimiter, async (req, res) => {
+  try {
+    let { message, conversationId } = req.body
+    const userId = req.user?.id
+
+    if (!userId)        return res.status(401).json({ error: "Unauthorized" })
+    if (!message?.trim()) return res.status(400).json({ error: "message is required" })
+
+    // Create conversation if not provided
+    if (!conversationId) {
+      const { data, error } = await db
+        .from("conversations")
+        .insert({ user_id: userId })
+        .select()
+        .single()
+      if (error) throw error
+      conversationId = data.id
+    }
+
+    // Verify ownership
+    const { data: ownedConvo } = await db
+      .from("conversations")
+      .select("id")
+      .eq("id", conversationId)
+      .eq("user_id", userId)
+      .single()
+    if (!ownedConvo) return res.status(403).json({ error: "Conversation does not belong to user" })
+
+    // Get context (last_symbol + last 4 messages)
+    const { lastSymbol, recentMessages } = await getConversationContext(conversationId, userId)
+
+    // Route
+    const routerOutput = await routerRoute(message, lastSymbol, { user_id: userId, conversation_id: conversationId })
+
+    // Dispatch
+    let response
+    switch (routerOutput.intent) {
+      case "STOCK_QUERY":
+        response = await handleStock(routerOutput, lastSymbol, userId, conversationId, recentMessages)
+        break
+      case "PORTFOLIO":
+        response = await handlePortfolio(routerOutput, userId, conversationId)
+        break
+      case "MARKET":
+        response = await handleMarket(routerOutput, userId, conversationId)
+        break
+      case "GENERAL":
+        response = await handleGeneral(routerOutput, userId, conversationId, recentMessages)
+        break
+      case "CLARIFY":
+      default: {
+        const reason = routerOutput._unresolved_ticker ? "ticker_not_found"
+                     : routerOutput._fallback_reason   ? "ambiguous_message"
+                     : "low_confidence"
+        response = handleClarify({
+          reason,
+          rejectedTicker:  routerOutput._unresolved_ticker,
+          lastSymbol,
+          userId,
+          conversationId
+        })
+        break
+      }
+    }
+
+    // Persist messages (router_metadata column requires migration 0002)
+    const assistantText = response.reply || response.question || ""
+    await saveMessagePair(conversationId, message, assistantText, routerOutput)
+
+    // Update last_symbol only for explicit validated tickers
+    if (routerOutput.ticker_source === "explicit" && routerOutput.ticker) {
+      await updateLastSymbol(conversationId, userId, routerOutput.ticker)
+    }
+
+    return res.json({ ...response, conversationId })
+
+  } catch (err) {
+    const isAxiosErr = err.response != null || err.code === "ECONNREFUSED" || err.code === "ETIMEDOUT"
+    const status = err.response?.status ?? (isAxiosErr ? 503 : 500)
+    const message = isAxiosErr && (err.code === "ECONNREFUSED" || err.code === "ETIMEDOUT")
+      ? "Technical analysis service is unavailable. If deployed, set TA_BASE_URL to your Python TA service URL."
+      : (err.message || "Something went wrong")
+    res.status(status).json({ error: message })
+  }
+})
+
 const PORT = process.env.PORT || 3000
 
 app.listen(PORT, () => {
   console.log("Server running on port", PORT)
+
+  // Emit static prompt token baseline — compare these across releases
+  // to catch unexpected prompt growth before it hits token budgets.
+  startupPromptSizes({
+    routerPromptText:       buildRouterPrompt(null),
+    comprehensivePromptText: COMP_STATIC,
+    focusedPromptText:       FOCS_STATIC
+  })
 })
