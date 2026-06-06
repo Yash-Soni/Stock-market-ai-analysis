@@ -120,9 +120,12 @@ async function dispatchChat(req, res, isV2) {
     }
     return res.json({ ...response, conversationId })
   } catch (err) {
-    const isAxios = err.response != null || err.code === "ECONNREFUSED" || err.code === "ETIMEDOUT"
-    const status = err.response?.status ?? (isAxios ? 503 : 500)
-    res.status(status).json({ error: isAxios && (err.code === "ECONNREFUSED" || err.code === "ETIMEDOUT") ? "Technical analysis service is unavailable." : (err.message || "Something went wrong") })
+    const upstream = err.response?.status ?? err.httpStatus
+    const isConnIssue = err.code === "ECONNREFUSED" || err.code === "ETIMEDOUT"
+    const isTransient = isConnIssue || upstream === 429 || upstream === 503
+    const status = isConnIssue ? 503 : (upstream ?? 500)
+    const message = isTransient ? "Technical analysis service is temporarily unavailable. Please try again in a moment." : (err.message || "Something went wrong")
+    res.status(status).json({ error: message })
   }
 }
 
