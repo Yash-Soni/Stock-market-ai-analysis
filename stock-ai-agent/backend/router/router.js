@@ -35,6 +35,10 @@ async function route(message, lastSymbol, ctx = {}) {
   const { user_id = null, conversation_id = null } = ctx
   const systemPrompt = buildRouterPrompt(lastSymbol)
 
+  // Accumulated per-call usage — attached to every return value so the
+  // test harness can sum token counts without parsing pino log streams.
+  let _meta = { input_tokens: 0, output_tokens: 0, latency_ms: 0 }
+
   // ── LLM call ──────────────────────────────────────────────────────────────
   let raw
   let completion
@@ -68,7 +72,8 @@ async function route(message, lastSymbol, ctx = {}) {
       success: false,
       error: err.message
     })
-    return _fallback(message, `LLM call failed: ${err.message}`)
+    _meta = { input_tokens: 0, output_tokens: 0, latency_ms: Date.now() - t0 }
+    return { ..._fallback(message, `LLM call failed: ${err.message}`), _meta }
   }
 
   const latency_ms = Date.now() - t0
@@ -78,6 +83,7 @@ async function route(message, lastSymbol, ctx = {}) {
   const inputTokens = usage.prompt_tokens ?? countTokens(systemPrompt + message).count
   const outputTokens = usage.completion_tokens ?? countTokens(raw).count
   const tokensApproximate = !usage.prompt_tokens
+  _meta = { input_tokens: inputTokens, output_tokens: outputTokens, latency_ms }
 
   llmCall({
     provider: 'groq',
@@ -114,7 +120,7 @@ async function route(message, lastSymbol, ctx = {}) {
       validation_reason: 'json_parse_failure',
       confidence_threshold_triggered: false
     })
-    return result
+    return { ...result, _meta }
   }
 
   // Coerce missing ticker to null
@@ -134,7 +140,7 @@ async function route(message, lastSymbol, ctx = {}) {
       validation_reason: `schema_error: ${errors.join('; ')}`,
       confidence_threshold_triggered: false
     })
-    return result
+    return { ...result, _meta }
   }
 
   // ── Post-processing rule: confidence < 0.7 → CLARIFY ─────────────────────
@@ -156,7 +162,7 @@ async function route(message, lastSymbol, ctx = {}) {
       validation_passed: true,
       confidence_threshold_triggered: true
     })
-    return result
+    return { ...result, _meta }
   }
 
   // ── Ticker validation for explicit STOCK_QUERY ────────────────────────────
@@ -197,7 +203,7 @@ async function route(message, lastSymbol, ctx = {}) {
         validation_reason: 'ticker_not_in_symbols_map',
         confidence_threshold_triggered: false
       })
-      return result
+      return { ...result, _meta }
     }
     parsed.ticker = canonical
   }
@@ -213,7 +219,7 @@ async function route(message, lastSymbol, ctx = {}) {
     confidence_threshold_triggered: false
   })
 
-  return parsed
+  return { ...parsed, _meta }
 }
 
 /**

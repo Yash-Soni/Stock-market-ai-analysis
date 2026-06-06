@@ -92,7 +92,7 @@ export function MacroSummary() {
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const url = `${API_BASE}world-events`
+      const url = `${API_BASE}/world-events`
       // console.log("[MacroSummary] fetching:", url)
       try {
         const res = await fetch(url)

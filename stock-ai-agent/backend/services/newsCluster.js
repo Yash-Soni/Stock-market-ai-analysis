@@ -1,8 +1,4 @@
 const cosineSimilarity = require("cosine-similarity")
-const Groq = require("groq-sdk")
-
-require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") })
-const client = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 // Build a simple word-vector embedding (no API): vocabulary index + term counts
 function buildEmbedder(headlines) {
@@ -57,38 +53,4 @@ function clusterHeadlines(headlines) {
   return clusters
 }
 
-async function summarizeCluster(cluster) {
-  if (!client) throw new Error("Groq client not configured")
-  const completion = await client.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      temperature: 0,
-      messages:[
-        {
-          role:"system",
-          content:`
-            You summarize news headlines into ONE short market-moving event title.
-
-            Rules:
-            - Output ONLY the event title
-            - No explanations
-            - No prefixes like "Here is..."
-            - No markdown
-            - Maximum 12 words
-            - Plain text only
-
-            Example output:
-            Iran conflict threatens global oil supply
-          `
-        },
-        {
-          role:"user",
-          content: cluster.join("\n")
-        }
-      ]
-    })
-
-  const content = completion.choices[0]?.message?.content?.trim() || ""
-  return { event: content }
-}
-
-module.exports = { clusterHeadlines, summarizeCluster }
+module.exports = { clusterHeadlines }

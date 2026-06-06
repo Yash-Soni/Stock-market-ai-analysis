@@ -35,9 +35,12 @@ ${contextLine}
 VALID INTENTS
 ═══════════════════════════════════════
 STOCK_QUERY  — User is asking about a specific named company or stock
-PORTFOLIO    — User is asking about their own personal holdings
+PORTFOLIO    — User asks about their own personal investment holdings, positions, or portfolio
+               composition. NOT questions about prior conversation turns or chat history.
 MARKET       — User is asking about a broad market index (Nifty, Sensex, S&P 500, etc.)
-GENERAL      — Conceptual, educational, definitional, greeting, or unclassifiable
+GENERAL      — Conceptual, educational, definitional, greeting, or unclassifiable.
+               Also includes advisory questions with no specific company named:
+               "what should I buy", "best stocks right now", "what is a good investment".
 CLARIFY      — Message is too ambiguous to route without clarification
 
 ═══════════════════════════════════════
@@ -66,6 +69,25 @@ RULE 5: ticker must be at least 3 characters. One or two-character strings are
 
 RULE 6: If the user explicitly names a company or ticker in THIS message, extract
         it exactly as they wrote it. Set ticker_source="explicit".
+
+RULE 7: Numbers following a ticker or company name are price levels, not tickers.
+        "INFY 1400" → ticker="INFY" (1400 is a price target, ignore it).
+        "TCS at 3500" → ticker="TCS". Never extract a bare number as a ticker.
+
+RULE 8: Comparison requests ("compare X with Y", "X vs Y", "difference between X and Y",
+        "which is better X or Y") → intent=CLARIFY, ticker=null, ticker_source="none".
+        Comparison of two stocks is not supported. Do NOT extract either company.
+
+RULE 9: Well-known NSE tickers: when a company's official NSE symbol is widely known,
+        you may use it directly. Examples: TCS for Tata Consultancy Services,
+        WIPRO for Wipro Limited, HDFCBANK for HDFC Bank / bare "HDFC",
+        RELIANCE for Reliance Industries. This overrides strict verbatim extraction
+        when the verbatim form is simply the full company name.
+
+RULE 10: When ticker_source is "followup", ticker MUST be null. Never copy
+         last_symbol into the ticker field. The handler resolves the actual
+         symbol from last_symbol independently. Setting ticker="INFY" on a
+         follow-up bypasses the last_symbol update guard.
 
 ═══════════════════════════════════════
 TICKER_SOURCE VALUES
@@ -172,7 +194,47 @@ User: "How is Nifty doing"
 EXAMPLE 10 — Composite: explicit ticker + volume (volume_history is the indicator):
 Context: Last discussed stock: null
 User: "Analyse TCS and tell me its volume"
-{"intent":"STOCK_QUERY","ticker":"TCS","ticker_source":"explicit","is_followup":false,"indicators_needed":["full_analysis_bundle","volume_history"],"parameters":{},"response_style":"comprehensive","user_question":"Analyse TCS and tell me its volume","confidence":0.96}`
+{"intent":"STOCK_QUERY","ticker":"TCS","ticker_source":"explicit","is_followup":false,"indicators_needed":["full_analysis_bundle","volume_history"],"parameters":{},"response_style":"comprehensive","user_question":"Analyse TCS and tell me its volume","confidence":0.96}
+
+EXAMPLE 11 — Bare "HDFC" maps to HDFC Bank (HDFCBANK) by convention — use the NSE symbol:
+Context: Last discussed stock: null
+User: "HDFC"
+{"intent":"STOCK_QUERY","ticker":"HDFCBANK","ticker_source":"explicit","is_followup":false,"indicators_needed":["full_analysis_bundle"],"parameters":{},"response_style":"comprehensive","user_question":"HDFC","confidence":0.90}
+
+EXAMPLE 12 — Full company name → use well-known NSE ticker; indicator word is NOT the ticker:
+Context: Last discussed stock: null
+User: "Tata Consultancy Services RSI"
+{"intent":"STOCK_QUERY","ticker":"TCS","ticker_source":"explicit","is_followup":false,"indicators_needed":["rsi"],"parameters":{},"response_style":"focused","user_question":"Tata Consultancy Services RSI","confidence":0.96}
+
+EXAMPLE 13 — Bare action verb with a last discussed stock → comprehensive follow-up:
+Context: Last discussed stock: INFY
+User: "analyse"
+{"intent":"STOCK_QUERY","ticker":null,"ticker_source":"followup","is_followup":true,"indicators_needed":["full_analysis_bundle"],"parameters":{},"response_style":"comprehensive","user_question":"analyse","confidence":0.88}
+
+EXAMPLE 14 — Price level alongside ticker (1400 is a price target, NOT a second ticker):
+Context: Last discussed stock: null
+User: "INFY 1400"
+{"intent":"STOCK_QUERY","ticker":"INFY","ticker_source":"explicit","is_followup":false,"indicators_needed":["full_analysis_bundle"],"parameters":{},"response_style":"comprehensive","user_question":"INFY 1400","confidence":0.92}
+
+EXAMPLE 15 — Comparison request → CLARIFY (comparing two stocks is not supported):
+Context: Last discussed stock: null
+User: "Analyse TCS and compare with INFY"
+{"intent":"CLARIFY","ticker":null,"ticker_source":"none","is_followup":false,"indicators_needed":[],"parameters":{},"response_style":"clarification_needed","user_question":"Analyse TCS and compare with INFY","confidence":0.85}
+
+EXAMPLE 16 — Focused follow-up with pronoun (ticker must be null):
+Context: Last discussed stock: INFY
+User: "what about volume?"
+{"intent":"STOCK_QUERY","ticker":null,"ticker_source":"followup","is_followup":true,"indicators_needed":["volume_history"],"parameters":{},"response_style":"focused","user_question":"what about volume?","confidence":0.93}
+
+EXAMPLE 17 — Advisory question with no company named:
+Context: Last discussed stock: null
+User: "What is the best stock to buy right now"
+{"intent":"GENERAL","ticker":null,"ticker_source":"none","is_followup":false,"indicators_needed":[],"parameters":{},"response_style":"focused","user_question":"What is the best stock to buy right now","confidence":0.95}
+
+EXAMPLE 18 — Conversation history question is GENERAL, not PORTFOLIO:
+Context: Last discussed stock: INFY
+User: "what happened to my last analysis"
+{"intent":"GENERAL","ticker":null,"ticker_source":"none","is_followup":false,"indicators_needed":[],"parameters":{},"response_style":"focused","user_question":"what happened to my last analysis","confidence":0.91}`
 }
 
 module.exports = { buildRouterPrompt }

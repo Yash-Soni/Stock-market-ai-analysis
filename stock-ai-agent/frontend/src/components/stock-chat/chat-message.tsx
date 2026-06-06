@@ -1,4 +1,6 @@
 import { TrendingUp, BarChart3, FileText, DollarSign, ExternalLink } from "lucide-react"
+import { FocusedAnswer } from "./focused-answer"
+import { Clarification } from "./clarification"
 
 // FLOW 1 — pure frontend redirect, no API key or backend call needed
 function openInZerodhaURL(symbol: string): string | null {
@@ -55,6 +57,18 @@ export interface StockAnalysis {
   avg_dividend?: number,
 }
 
+export interface V2FocusedAnswer {
+  symbol: string
+  displayName: string
+  indicators: Record<string, unknown>
+  reply: string
+}
+
+export interface V2Clarification {
+  question: string
+  suggestions?: string[]
+}
+
 export interface ChatMessageData {
   id: string
   role: "user" | "assistant"
@@ -64,6 +78,21 @@ export interface ChatMessageData {
   /** When backend returns multiple analyses (e.g. analyses array) */
   stockAnalyses?: StockAnalysis[]
   isLoading?: boolean
+  /** v2/chat typed response envelope */
+  responseType?: "analysis_card" | "focused_answer" | "clarification" | "data_card"
+  focusedAnswer?: V2FocusedAnswer
+  clarification?: V2Clarification
+}
+
+/** Dispatches v2 typed responses to the correct renderer. Returns null for legacy/analysis_card messages. */
+function ChatMessageRenderer({ message }: { message: ChatMessageData }) {
+  if (message.responseType === "focused_answer" && message.focusedAnswer) {
+    return <FocusedAnswer {...message.focusedAnswer} />
+  }
+  if (message.responseType === "clarification" && message.clarification) {
+    return <Clarification {...message.clarification} />
+  }
+  return null
 }
 
 interface ChatMessageProps {
@@ -132,6 +161,12 @@ export function ChatMessage({ message }: ChatMessageProps) {
           <TrendingUp className="size-4 text-primary" />
         </div>
         <div className="flex-1 min-w-0 space-y-2 sm:space-y-3">
+          {/* v2 typed responses: focused_answer and clarification */}
+          <ChatMessageRenderer message={message} />
+
+          {/* Legacy / analysis_card / data_card / plain-text rendering */}
+          {message.responseType !== "focused_answer" && message.responseType !== "clarification" && (
+            <>
           {message.content && !message.stockAnalysis && !message.stockAnalyses?.length && (
             <div className="min-w-0 max-w-full overflow-hidden rounded-[1.25rem] rounded-tl-sm border border-border/80 bg-muted/40 px-3.5 py-2.5 shadow-sm box-border">
               <p className="text-[15px] leading-relaxed text-foreground wrap-anywhere">
@@ -376,6 +411,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
               )}
             </div>
           ))}
+            </>
+          )}
 
           <span className="text-[10px] text-muted-foreground mt-0.5 block pl-0.5 sm:pl-10">
             {formatMessageTime(message.timestamp)}

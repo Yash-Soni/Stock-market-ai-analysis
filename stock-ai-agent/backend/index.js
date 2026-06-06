@@ -3,7 +3,7 @@ require("dotenv").config()
 
 const express   = require("express")
 const cors      = require("cors")
-const rateLimit = require("express-rate-limit")
+const { rateLimit, ipKeyGenerator } = require("express-rate-limit")
 const { version } = require("./package.json")
 
 const { db }             = require("./services/client")
@@ -18,7 +18,7 @@ const { handlePortfolio, handlePortfolioAnalysis } = require("./handlers/portfol
 const { handleMarket }    = require("./handlers/marketHandler")
 const { handleClarify }   = require("./handlers/clarifyHandler")
 
-const { startupPromptSizes } = require("./lib/logger")
+const { logger, startupPromptSizes } = require("./lib/logger")
 const { buildRouterPrompt }  = require("./router/routerPrompt")
 const { STATIC_PROMPT: COMP_STATIC } = require("./prompts/comprehensivePrompt")
 const { STATIC_RULES: FOCS_STATIC }  = require("./prompts/focusedPrompt")
@@ -51,7 +51,7 @@ async function requireAuth(req, res, next) {
 
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000, max: 5,
-  keyGenerator: (req) => req.user?.id || req.ip,
+  keyGenerator: (req) => req.user?.id ?? ipKeyGenerator(req.ip),
   handler: (req, res) => res.status(429).json({ error: "Too many requests. You can send 5 messages per minute. Please wait and try again." }),
   standardHeaders: true, legacyHeaders: false,
 })
@@ -132,6 +132,6 @@ app.post("/v2/chat", requireAuth, chatLimiter, (req, res) => dispatchChat(req, r
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT)
+  logger.info({ event: 'server_started', port: PORT })
   startupPromptSizes({ routerPromptText: buildRouterPrompt(null), comprehensivePromptText: COMP_STATIC, focusedPromptText: FOCS_STATIC })
 })

@@ -1,6 +1,7 @@
 const axios = require("axios")
 const Groq = require("groq-sdk")
-const { clusterHeadlines, summarizeCluster } = require("./newsCluster")
+const { clusterHeadlines } = require("./newsCluster")
+const { logger } = require("../lib/logger")
 
 const client = new Groq({
   apiKey: process.env.GROQ_API_KEY
@@ -14,13 +15,11 @@ let cache = {
 const CACHE_DURATION = 30 * 60 * 1000   // 30 minutes
 
 async function fetchNews() {
-  console.log("[MacroEvents] fetchNews: NEWS_API_KEY present?", !!process.env.NEWS_API_KEY)
   if (!process.env.NEWS_API_KEY) {
-    console.warn("[MacroEvents] fetchNews: NEWS_API_KEY missing — skipping")
+    logger.warn({ event: 'macro_news_fetch_skipped', reason: 'missing_api_key' })
     return []
   }
   try {
-    console.log("[MacroEvents] fetchNews: sending request to NewsAPI")
     const res = await axios.get(
       "https://newsapi.org/v2/everything",
       {
@@ -34,13 +33,12 @@ async function fetchNews() {
       }
     )
     const articles = res.data?.articles
-    console.log("[MacroEvents] fetchNews: HTTP", res.status, "| articles received:", Array.isArray(articles) ? articles.length : `non-array (${typeof articles})`)
     if (res.data?.status === "error") {
-      console.warn("[MacroEvents] fetchNews: NewsAPI error response:", res.data?.message)
+      logger.warn({ event: 'macro_news_fetch_failed', http_status: res.status, api_message: res.data?.message })
     }
     return Array.isArray(articles) ? articles.slice(0, 15) : []
   } catch (err) {
-    console.warn("[MacroEvents] fetchNews: request failed —", err.message)
+    logger.warn({ event: 'macro_news_fetch_failed', error: err.message })
     return []
   }
 }
@@ -108,7 +106,7 @@ async function extractMarketEvents(articles){
     }
     return JSON.parse(raw)
   } catch (err) {
-    console.warn("Macro events: LLM response was not valid JSON, using empty list:", err)
+    logger.warn({ event: 'macro_events_parse_failed', stage: 'extract_market_events', error: err.message })
     return []
   }
 }
@@ -168,8 +166,6 @@ function normalizeImpact(impact){
 
 async function generateMacroEvents(clusters){
 
-  console.log("[MacroEvents] generateMacroEvents: calling LLM with", clusters.length, "cluster(s)")
-
   const completion =
     await client.chat.completions.create({
       model: "llama-3.3-70b-versatile",
@@ -207,14 +203,11 @@ async function generateMacroEvents(clusters){
     })
 
   const raw = completion.choices[0].message.content
-  console.log("[MacroEvents] generateMacroEvents: raw LLM response (first 300 chars):", raw?.slice(0, 300))
 
   try{
-    const parsed = JSON.parse(raw)
-    console.log("[MacroEvents] generateMacroEvents: parsed", Array.isArray(parsed) ? parsed.length : "non-array", "event(s)")
-    return parsed
+    return JSON.parse(raw)
   }catch(e){
-    console.warn("[MacroEvents] generateMacroEvents: JSON.parse failed —", e.message, "| raw:", raw?.slice(0, 200))
+    logger.warn({ event: 'macro_events_parse_failed', stage: 'generate_macro_events', error: e.message })
     return []
   }
 }
@@ -245,34 +238,25 @@ async function getMacroEvents(){
     cache.events &&
     now - cache.timestamp < CACHE_DURATION
   ){
-    console.log("[MacroEvents] getMacroEvents: cache hit —", cache.events.length, "event(s), age", Math.round((now - cache.timestamp) / 1000), "s")
     return cache.events
   }
 
-  console.log("[MacroEvents] getMacroEvents: cache miss — fetching fresh events")
-
   const news = await fetchNews()
-  console.log("[MacroEvents] getMacroEvents: fetchNews returned", news.length, "article(s)")
 
   // Step 1: extract headlines (filter out missing titles)
   const headlines = news
     .map((a) => a && a.title)
     .filter(Boolean)
 
-  console.log("[MacroEvents] getMacroEvents: headlines extracted:", headlines.length)
-
   if (headlines.length === 0) {
-    console.warn("[MacroEvents] getMacroEvents: no headlines — returning empty")
     cache = { events: [], timestamp: now }
     return []
   }
 
   // Step 2: cluster similar headlines
   const clusters = clusterHeadlines(headlines)
-  console.log("[MacroEvents] getMacroEvents: clusters formed:", clusters.length)
 
   if (clusters.length === 0) {
-    console.warn("[MacroEvents] getMacroEvents: no clusters — returning empty")
     cache = { events: [], timestamp: now }
     return []
   }
@@ -282,7 +266,6 @@ async function getMacroEvents(){
   )
 
   const topEvents = Array.isArray(events) ? events.slice(0, 10) : []
-  console.log("[MacroEvents] getMacroEvents: final topEvents count:", topEvents.length)
 
   cache = {
     events: topEvents,

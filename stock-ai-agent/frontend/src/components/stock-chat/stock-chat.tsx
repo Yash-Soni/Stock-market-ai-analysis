@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useContext } from "react"
+import { useState, useRef, useEffect, useCallback, useContext, useMemo } from "react"
 import { ScrollArea } from "../../components/ui/scroll-area"
 import { ChatMessage, type ChatMessageData } from "./chat-message"
 import { ChatInput } from "./chat-input"
@@ -6,10 +6,11 @@ import { ChatSidebar } from "./chat-sidebar"
 import { mapBackendResponseToStockAnalyses } from "../../lib/backend-mapper"
 import { QUICK_SUGGESTIONS } from "../../lib/sample-data"
 import { useTheme } from "../../lib/use-theme"
-import { TrendingUp, PanelLeftClose, PanelLeft, LogOut, UserRound } from "lucide-react"
+import { TrendingUp, PanelLeftClose, PanelLeft, LogOut, UserRound, Loader2 } from "lucide-react"
 import { MacroSummary } from "./macro-summary"
 import { AuthContext } from "../../context/AuthContext"
 import { supabase } from "../../lib/supabase"
+import { ErrorBoundary } from "./error-boundary"
 
 const WELCOME_MESSAGE: ChatMessageData = {
   id: "welcome",
@@ -34,7 +35,10 @@ export function StockChat() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [zerodhaConnected, setZerodhaConnected] = useState(false)
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [portfolioLoading, setPortfolioLoading] = useState(false)
+  const [analyzeLoading, setAnalyzeLoading] = useState(false)
+  const submittingRef = useRef(false)
 
   const { user } = useContext(AuthContext);
 
@@ -65,8 +69,11 @@ export function StockChat() {
   }, [messages, scrollToBottom])
 
   const handleSend = useCallback(async (content: string) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
+
     const userMessage: ChatMessageData = {
-      id: `user-${Date.now()}`,
+      id: crypto.randomUUID(),
       role: "user",
       content,
       timestamp: new Date(),
@@ -75,7 +82,7 @@ export function StockChat() {
     setIsLoading(true)
 
     const loadingMessage: ChatMessageData = {
-      id: `loading-${Date.now()}`,
+      id: crypto.randomUUID(),
       role: "assistant",
       content: "",
       timestamp: new Date(),
@@ -83,51 +90,32 @@ export function StockChat() {
     }
     setMessages((prev) => [...prev, loadingMessage])
 
-    // Prefer ALL CAPS ticker (e.g. INFY, AAPL); ignore generic terms (REIT, ETF) so backend can resolve by name
-    // const GENERIC_TERMS = new Set(["REIT", "ETF", "STOCK", "SHARE", "NIFTY", "SENSEX", "INDEX", "IPO"])
-    // const allCapsMatch = content.match(/\b([A-Z]{2,10})\b/)
-    // const rawSymbol = allCapsMatch ? allCapsMatch[1] : null
-    // const symbol = rawSymbol && !GENERIC_TERMS.has(rawSymbol) ? rawSymbol : null
-
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-
-    // if (!symbol) {
-    //   const noSymbolMessage: ChatMessageData = {
-    //     id: `assistant-${Date.now()}`,
-    //     role: "assistant",
-    //     content:
-    //       "Please include a stock symbol in your message (e.g. RELIANCE, INFY, AAPL). I'll fetch live technicals, fundamentals, and AI analysis for that symbol.",
-    //     timestamp: new Date(),
-    //   }
-    //   setMessages((prev) => [...prev.filter((m) => !m.isLoading), noSymbolMessage])
-    //   setIsLoading(false)
-    //   return
-    // }
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData.session?.access_token
 
     try {
-      const res = await fetch(`${API_BASE}chat`, {
+      const res = await fetch(`${API_BASE}/v2/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          message: content,
-          conversationId, // 🔥 important
-        }),
+        body: JSON.stringify({ message: content, conversationId }),
       })
-      const data = await res.json();
+      const data = await res.json()
 
       if (data.conversationId) {
-        setConversationId(data.conversationId);
+        setConversationId(data.conversationId)
       }
 
       if (!res.ok) {
+        const errorContent = res.status === 503
+          ? "Analysis is temporarily unavailable. Please try again in a moment."
+          : (data?.error ?? `Request failed (${res.status}). Make sure the backend is running on port 3000.`)
         const errorMessage: ChatMessageData = {
-          id: `assistant-${Date.now()}`,
+          id: crypto.randomUUID(),
           role: "assistant",
-          content: data?.error ?? `Request failed (${res.status}). Make sure the backend is running on port 3000.`,
+          content: errorContent,
           timestamp: new Date(),
         }
         setMessages((prev) => {
@@ -135,29 +123,51 @@ export function StockChat() {
           localStorage.setItem("chatHistory", JSON.stringify(next))
           return next
         })
-        setIsLoading(false)
         return
       }
 
-      const stockAnalyses = mapBackendResponseToStockAnalyses(data)
       const responseMessage: ChatMessageData = {
-        id: `assistant-${Date.now()}`,
+        id: crypto.randomUUID(),
         role: "assistant",
         content: "",
         timestamp: new Date(),
-        stockAnalyses,
       }
+
+      if (data.type === "analysis_card") {
+        responseMessage.responseType = "analysis_card"
+        responseMessage.stockAnalyses = mapBackendResponseToStockAnalyses(data)
+      } else if (data.type === "focused_answer") {
+        responseMessage.responseType = "focused_answer"
+        responseMessage.focusedAnswer = {
+          symbol: data.symbol ?? "",
+          displayName: data.displayName ?? data.symbol ?? "",
+          indicators: data.indicators ?? {},
+          reply: data.reply ?? "",
+        }
+        responseMessage.content = data.reply ?? ""
+      } else if (data.type === "clarification") {
+        responseMessage.responseType = "clarification"
+        responseMessage.clarification = {
+          question: data.question ?? data.reply ?? "",
+          suggestions: data.suggestions ?? [],
+        }
+        responseMessage.content = data.question ?? data.reply ?? ""
+      } else {
+        // data_card, general_answer, market_answer, portfolio_answer, or missing type
+        responseMessage.responseType = "data_card"
+        responseMessage.content = data.reply ?? data.question ?? ""
+      }
+
       setMessages((prev) => {
         const next = [...prev.filter((m) => !m.isLoading), responseMessage]
         localStorage.setItem("chatHistory", JSON.stringify(next))
         return next
       })
-    } catch (err) {
+    } catch {
       const errorMessage: ChatMessageData = {
-        id: `assistant-${Date.now()}`,
+        id: crypto.randomUUID(),
         role: "assistant",
-        content:
-          "Could not reach the backend. Ensure it's running (e.g. `node index.js` in the backend folder) and try again.",
+        content: "Could not reach the backend. Ensure it's running (e.g. `node index.js` in the backend folder) and try again.",
         timestamp: new Date(),
       }
       setMessages((prev) => {
@@ -166,11 +176,21 @@ export function StockChat() {
         return next
       })
     } finally {
+      submittingRef.current = false
       setIsLoading(false)
     }
   }, [conversationId])
 
-  const recentSymbols = messages
+  const dedupedMessages = useMemo(() => {
+    const seen = new Set<string>()
+    return messages.filter((m) => {
+      if (seen.has(m.id)) return false
+      seen.add(m.id)
+      return true
+    })
+  }, [messages])
+
+  const recentSymbols = dedupedMessages
     .filter((m) => m.stockAnalysis)
     .map((m) => m.stockAnalysis!)
     .reverse()
@@ -234,9 +254,15 @@ export function StockChat() {
             {zerodhaConnected && (
               <button
                 type="button"
-                className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
-                onClick={() => fetch(`${API_BASE}portfolio`)}
+                disabled={portfolioLoading}
+                className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80 flex items-center gap-1 disabled:opacity-50"
+                onClick={async () => {
+                  setPortfolioLoading(true)
+                  try { await fetch(`${API_BASE}/portfolio`) }
+                  finally { setPortfolioLoading(false) }
+                }}
               >
+                {portfolioLoading && <Loader2 className="size-3 animate-spin" />}
                 Portfolio
               </button>
             )}
@@ -244,18 +270,26 @@ export function StockChat() {
             {zerodhaConnected && (
               <button
                 type="button"
-                className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
+                disabled={analyzeLoading}
+                className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80 flex items-center gap-1 disabled:opacity-50"
                 onClick={async () => {
-                  const res = await fetch(`${API_BASE}analyze-portfolio`)
-                  const data = await res.json()
-                  setMessages((prev) => [...prev, {
-                    id: `assistant-${Date.now()}`,
-                    role: "assistant",
-                    content: data.analysis,
-                    timestamp: new Date(),
-                  }])
+                  setAnalyzeLoading(true)
+                  try {
+                    const res = await fetch(`${API_BASE}/analyze-portfolio`)
+                    const data = await res.json()
+                    setMessages((prev) => [...prev, {
+                      id: crypto.randomUUID(),
+                      role: "assistant" as const,
+                      content: data.analysis ?? data.reply ?? "",
+                      timestamp: new Date(),
+                      responseType: "data_card" as const,
+                    }])
+                  } finally {
+                    setAnalyzeLoading(false)
+                  }
                 }}
               >
+                {analyzeLoading && <Loader2 className="size-3 animate-spin" />}
                 Analyze
               </button>
             )}
@@ -296,8 +330,10 @@ export function StockChat() {
         <div ref={scrollRef} className="min-h-0 flex-1 basis-0 w-full min-w-0 max-w-full overflow-hidden">
           <ScrollArea className="h-full min-h-0 w-full min-w-0 max-w-full overflow-x-hidden">
             <div className="mx-auto box-border w-full min-w-0 max-w-full max-w-3xl overflow-x-hidden px-2 py-4 sm:px-4 sm:py-6 lg:px-6 max-lg:pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]">
-              {messages.map((message) => (
-                <ChatMessage key={message.id} message={message} />
+              {dedupedMessages.map((message) => (
+                <ErrorBoundary key={message.id}>
+                  <ChatMessage message={message} />
+                </ErrorBoundary>
               ))}
             </div>
           </ScrollArea>

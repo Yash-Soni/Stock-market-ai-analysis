@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:router": "node tests/runRouterTests.js",
+    "test:router:live": "node tests/runRouterTests.js --no-cache"
   },
   "keywords": [],
   "author": "",

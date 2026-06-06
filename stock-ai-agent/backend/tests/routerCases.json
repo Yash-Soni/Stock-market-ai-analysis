@@ -1,0 +1,483 @@
+[
+  {
+    "id": "A1",
+    "description": "Pronoun follow-up after INFY analysis — must use last_symbol, not invent ticker",
+    "input": "Should I buy this",
+    "lastSymbol": "INFY.NS",
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": null,
+      "ticker_source": "followup",
+      "is_followup": true,
+      "response_style": "comprehensive"
+    }
+  },
+  {
+    "id": "A2",
+    "description": "Single stopword 'yes' with no context — must never resolve to a ticker",
+    "input": "yes",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "A3",
+    "description": "Single stopword 'yes' even WITH a last_symbol — still CLARIFY, not a follow-up",
+    "input": "yes",
+    "lastSymbol": "TCS.NS",
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "A4",
+    "description": "Indicator follow-up — rsi and ema_200 are indicators not tickers; ticker must remain null",
+    "input": "Can you tell me about its technical parameters like rsi and ema 200",
+    "lastSymbol": "INFY.NS",
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": null,
+      "ticker_source": "followup",
+      "is_followup": true,
+      "response_style": "focused",
+      "indicators_needed_includes": ["rsi", "ema_200"],
+      "indicators_needed_excludes": ["full_analysis_bundle"]
+    }
+  },
+  {
+    "id": "B1",
+    "description": "Stopword 'ok' alone — must be CLARIFY",
+    "input": "ok",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "B2",
+    "description": "Stopword 'sure' with active last_symbol — must still be CLARIFY",
+    "input": "sure",
+    "lastSymbol": "INFY.NS",
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "B3",
+    "description": "Social message 'thanks' — should get a warm GENERAL reply, not clarification",
+    "input": "thanks",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "GENERAL"
+    }
+  },
+  {
+    "id": "B4",
+    "description": "Bare action word 'buy' with no ticker or context — must be CLARIFY",
+    "input": "buy",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "B5",
+    "description": "Bare 'sell' with last_symbol — ambiguous without explicit stock; must be CLARIFY",
+    "input": "sell",
+    "lastSymbol": "TCS.NS",
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "B6",
+    "description": "Negative particle 'no' alone — CLARIFY",
+    "input": "no",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "C1",
+    "description": "Indicator name alone 'rsi' — concept question, NOT a stock ticker",
+    "input": "rsi",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "GENERAL",
+      "ticker": null
+    }
+  },
+  {
+    "id": "C2",
+    "description": "Indicator phrase 'ema 200' alone — concept, not a ticker",
+    "input": "ema 200",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "GENERAL",
+      "ticker": null
+    }
+  },
+  {
+    "id": "C3",
+    "description": "Indicator phrase 'bollinger bands' alone — concept, not a ticker",
+    "input": "bollinger bands",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "GENERAL",
+      "ticker": null
+    }
+  },
+  {
+    "id": "C4",
+    "description": "Multiple indicator names — concept question, neither is a ticker",
+    "input": "macd and rsi",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "GENERAL",
+      "ticker": null
+    }
+  },
+  {
+    "id": "C5",
+    "description": "Definition question about RSI — GENERAL even with active last_symbol",
+    "input": "what is RSI",
+    "lastSymbol": "INFY.NS",
+    "expected": {
+      "intent": "GENERAL",
+      "ticker": null
+    }
+  },
+  {
+    "id": "D1",
+    "description": "Bare 'Apollo' — resolves to APOLLO.NS (bare symbol exists in symbols.json); ADJUSTED from spec's expected CLARIFY",
+    "input": "Apollo",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "APOLLO.NS",
+      "ticker_source": "explicit"
+    }
+  },
+  {
+    "id": "D2",
+    "description": "Bare 'Bajaj' — multiple entities, none match bare 'Bajaj' in symbols.json; CLARIFY",
+    "input": "Bajaj",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "D3",
+    "description": "Bare 'HDFC' — Router example maps to HDFCBANK; POLICY: bare HDFC = HDFC Bank",
+    "input": "HDFC",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "HDFCBANK.NS",
+      "ticker_source": "explicit"
+    }
+  },
+  {
+    "id": "D4",
+    "description": "Explicit ticker with .NS suffix typed by user — must preserve and resolve",
+    "input": "analyse INFY.NS",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "INFY.NS",
+      "ticker_source": "explicit",
+      "is_followup": false,
+      "response_style": "comprehensive"
+    }
+  },
+  {
+    "id": "E1",
+    "description": "Ticker with two indicators — both must appear; ticker extracted, not RSI or MACD",
+    "input": "INFY RSI and MACD",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "INFY.NS",
+      "ticker_source": "explicit",
+      "response_style": "focused",
+      "indicators_needed_includes": ["rsi", "macd"]
+    }
+  },
+  {
+    "id": "E2",
+    "description": "Number before indicator must not become ticker — '50' is EMA period, TCS is ticker",
+    "input": "50 EMA for TCS",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "TCS.NS",
+      "ticker_source": "explicit",
+      "response_style": "focused",
+      "indicators_needed_includes": ["ema_50"]
+    }
+  },
+  {
+    "id": "E3",
+    "description": "Comparison request — not supported; must return CLARIFY not STOCK_QUERY",
+    "input": "Analyse TCS and compare with INFY",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "E4",
+    "description": "Ticker with price level — 1400 is a price target, not a second ticker",
+    "input": "INFY 1400",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "INFY.NS",
+      "ticker_source": "explicit",
+      "response_style": "comprehensive"
+    }
+  },
+  {
+    "id": "F1",
+    "description": "Volume follow-up with pronoun — must map 'volume' to volume_history indicator",
+    "input": "what about volume?",
+    "lastSymbol": "INFY.NS",
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": null,
+      "ticker_source": "followup",
+      "is_followup": true,
+      "response_style": "focused",
+      "indicators_needed_includes": ["volume_history"]
+    }
+  },
+  {
+    "id": "F2",
+    "description": "'same for TCS' with INFY as last — new explicit ticker named, not a followup",
+    "input": "same for TCS",
+    "lastSymbol": "INFY.NS",
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "TCS.NS",
+      "ticker_source": "explicit",
+      "is_followup": false
+    }
+  },
+  {
+    "id": "F3",
+    "description": "Comparison follow-up — CLARIFY even with last_symbol",
+    "input": "compare with TCS",
+    "lastSymbol": "INFY.NS",
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "F4",
+    "description": "Question about conversation history — GENERAL, not a stock request",
+    "input": "what happened to my last analysis",
+    "lastSymbol": "INFY.NS",
+    "expected": {
+      "intent": "GENERAL"
+    }
+  },
+  {
+    "id": "F5",
+    "description": "Ticker with question mark — must still resolve to STOCK_QUERY",
+    "input": "INFY?",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "INFY.NS",
+      "ticker_source": "explicit",
+      "response_style": "comprehensive"
+    }
+  },
+  {
+    "id": "G1",
+    "description": "Market index query — Sensex",
+    "input": "how is sensex doing",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "MARKET"
+    }
+  },
+  {
+    "id": "G2",
+    "description": "Market index query — Nifty 50",
+    "input": "nifty 50 today",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "MARKET"
+    }
+  },
+  {
+    "id": "G3",
+    "description": "Definition question about Nifty — MARKET handler can serve a brief overview",
+    "input": "what is nifty",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "MARKET"
+    }
+  },
+  {
+    "id": "G4",
+    "description": "General market state question — MARKET",
+    "input": "how is the market today",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "MARKET"
+    }
+  },
+  {
+    "id": "H1",
+    "description": "Personal portfolio request",
+    "input": "show my portfolio",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "PORTFOLIO"
+    }
+  },
+  {
+    "id": "H2",
+    "description": "Portfolio concentration question — personal holdings concern",
+    "input": "am I overexposed to IT",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "PORTFOLIO"
+    }
+  },
+  {
+    "id": "H3",
+    "description": "Diversification question — without holdings context, GENERAL is the safer response",
+    "input": "should I diversify",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "GENERAL"
+    }
+  },
+  {
+    "id": "H4",
+    "description": "Concept question about diversification — GENERAL not personal PORTFOLIO",
+    "input": "what is portfolio diversification",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "GENERAL"
+    }
+  },
+  {
+    "id": "I1",
+    "description": "Vague ambiguous message — low confidence should trigger CLARIFY",
+    "input": "maybe analyse something",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "I2",
+    "description": "Bare 'analyse' with no ticker and no last_symbol — CLARIFY",
+    "input": "analyse",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "CLARIFY",
+      "ticker": null
+    }
+  },
+  {
+    "id": "I3",
+    "description": "Bare 'analyse' WITH last_symbol — implicit comprehensive follow-up",
+    "input": "analyse",
+    "lastSymbol": "INFY.NS",
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": null,
+      "ticker_source": "followup",
+      "is_followup": true,
+      "response_style": "comprehensive"
+    }
+  },
+  {
+    "id": "I4",
+    "description": "Multi-word company name — validator found BAJFINANCE.NS as exact match; STOCK_QUERY",
+    "input": "Bajaj Finance",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "BAJFINANCE.NS",
+      "ticker_source": "explicit"
+    }
+  },
+  {
+    "id": "I5",
+    "description": "Full company name + indicator — Router should use well-known NSE symbol TCS",
+    "input": "Tata Consultancy Services RSI",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "TCS.NS",
+      "ticker_source": "explicit",
+      "response_style": "focused",
+      "indicators_needed_includes": ["rsi"]
+    }
+  },
+  {
+    "id": "J1",
+    "description": "General best-stock question — no specific company; GENERAL",
+    "input": "What is the best stock to buy right now",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "GENERAL",
+      "ticker": null
+    }
+  },
+  {
+    "id": "J2",
+    "description": "Beginner greeting — GENERAL warm response",
+    "input": "Hello, I am a beginner investor",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "GENERAL"
+    }
+  },
+  {
+    "id": "J3",
+    "description": "Reliance RSI — company name + indicator; Reliance resolves via name lookup",
+    "input": "Reliance RSI",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "RELIANCE.NS",
+      "ticker_source": "explicit",
+      "response_style": "focused",
+      "indicators_needed_includes": ["rsi"]
+    }
+  },
+  {
+    "id": "J4",
+    "description": "TCS support resistance — focused indicator query",
+    "input": "TCS support resistance",
+    "lastSymbol": null,
+    "expected": {
+      "intent": "STOCK_QUERY",
+      "ticker": "TCS.NS",
+      "ticker_source": "explicit",
+      "response_style": "focused",
+      "indicators_needed_includes": ["support_resistance"]
+    }
+  }
+]

@@ -1,6 +1,7 @@
 'use strict'
 
 const { db } = require('./client')
+const { logger } = require('../lib/logger')
 
 /**
  * Stub for the future summary compression feature.
@@ -56,7 +57,7 @@ async function updateLastSymbol(conversationId, userId, symbol) {
  * @param {object} routerMetadata — Full Router output (stored in router_metadata JSONB column)
  */
 async function saveMessagePair(conversationId, userContent, assistantContent, routerMetadata) {
-  await db.from('messages').insert([
+  const { error } = await db.from('messages').insert([
     {
       conversation_id: conversationId,
       role:            'user',
@@ -69,6 +70,9 @@ async function saveMessagePair(conversationId, userContent, assistantContent, ro
       content:         assistantContent
     }
   ])
+  if (error) {
+    logger.error({ event: 'save_message_pair_failed', conversation_id: conversationId, db_error: error.message, db_error_code: error.code })
+  }
 }
 
 module.exports = { getConversationContext, updateLastSymbol, saveMessagePair }
