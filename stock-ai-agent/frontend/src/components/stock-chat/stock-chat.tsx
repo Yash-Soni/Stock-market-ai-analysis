@@ -20,7 +20,7 @@ const WELCOME_MESSAGE: ChatMessageData = {
   timestamp: new Date(),
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000"
+const API_BASE = (import.meta.env.VITE_API_BASE || "http://localhost:3000").replace(/\/+$/, "")
 
 export function StockChat() {
   const { theme, toggleTheme } = useTheme()
@@ -44,7 +44,7 @@ export function StockChat() {
 
   useEffect(() => {
     const controller = new AbortController()
-    fetch(`${API_BASE}zerodha/status`, { signal: controller.signal })
+    fetch(`${API_BASE}/zerodha/status`, { signal: controller.signal })
       .then(res => res.json())
       .then(data => setZerodhaConnected(data.connected))
       .catch(() => {})
@@ -245,7 +245,7 @@ export function StockChat() {
               <button
                 type="button"
                 className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80 hover:bg-accent"
-                onClick={() => window.open(`${API_BASE}connect/zerodha`, "_blank")}
+                onClick={() => window.open(`${API_BASE}/connect/zerodha`, "_blank")}
               >
                 Connect Zerodha
               </button>
@@ -298,7 +298,7 @@ export function StockChat() {
               <button
                 type="button"
                 className="text-[10px] sm:text-xs px-2 py-1 rounded-md border border-border bg-background/80"
-                onClick={() => fetch(`${API_BASE}disconnect`)}
+                onClick={() => fetch(`${API_BASE}/disconnect`)}
               >
                 Disconnect
               </button>

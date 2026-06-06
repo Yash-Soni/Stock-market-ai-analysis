@@ -20,7 +20,7 @@ const GAP_PX = 8
 const SLIDE_DURATION_MS = 600
 const STEP_PX = CARD_HEIGHT_PX + GAP_PX
 const VIEWPORT_HEIGHT_PX = VISIBLE_BOXES * STEP_PX - GAP_PX
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000"
+const API_BASE = (import.meta.env.VITE_API_BASE || "http://localhost:3000").replace(/\/+$/, "")
 
 function toArray(v: unknown): string[] {
   if (Array.isArray(v)) return v.filter((x) => typeof x === "string")
