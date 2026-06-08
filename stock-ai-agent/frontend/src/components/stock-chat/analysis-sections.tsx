@@ -9,7 +9,7 @@ type SectionName = "decision" | "entry" | "risk" | "longterm" | "layman" | "prea
 
 const HEADERS: { name: SectionName; re: RegExp }[] = [
   { name: "decision", re: /(?:📊\s*)?Decision Summary\s*:?/i },
-  { name: "entry",    re: /Entry Plan\s*:?/i },
+  { name: "entry",    re: /(?:Entry Plan|CONSIDERATIONS)\s*:?/i },
   { name: "risk",     re: /Risk Note\s*:?/i },
   { name: "longterm", re: /Long[-\s]?[Tt]erm View\s*:?/i },
   { name: "layman",   re: /Layman[-\s]?[Ff]riendly Insight\s*:?/i },
@@ -129,11 +129,11 @@ export function StructuredAnalysis({ markdown }: { markdown: string }) {
         </div>
       )}
 
-      {/* Entry Plan — bordered card with separated bullets */}
+      {/* Considerations — bordered card with separated bullets */}
       {s.entry && (
         <div className="rounded-lg border border-border/60 px-3 py-2.5 min-w-0">
           <p className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5">
-            Entry Plan
+            Considerations
           </p>
           <div className="text-foreground/80">
             <Md>{s.entry}</Md>
@@ -166,6 +166,10 @@ export function StructuredAnalysis({ markdown }: { markdown: string }) {
           <Md>{s.layman}</Md>
         </CollapsibleSection>
       )}
+
+      <p className="text-xs text-muted-foreground text-center mt-4">
+        For informational purposes only. Not financial advice.
+      </p>
 
     </div>
   )

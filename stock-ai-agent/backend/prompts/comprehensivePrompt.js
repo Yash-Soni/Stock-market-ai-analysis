@@ -117,10 +117,12 @@ const STATIC_PROMPT = `You are a professional portfolio manager managing institu
             Do NOT calculate Capital at Risk using Risk Score.
             Capital at Risk always equals Initial Allocation.
 
-          Entry Plan:
-          - % now
-          - % if RSI <30
-          - % after EMA20 slope positive
+          CONSIDERATIONS:
+          - Describe the current technical setup in one sentence (trend direction + momentum state)
+          - State one specific condition that would change the outlook (e.g. "RSI crossing above 50 with EMA20 turning positive would signal trend recovery")
+          - One observation about volatility or sector context if notable
+          Keep to 2–3 observations. No allocation percentages. No buy or sell recommendation.
+          If ALL of PE, ROE, Debt/Equity, Revenue Growth are unavailable, omit this section entirely. Instead append to the Risk Note: "Fundamental data unavailable — technical signals only, exercise additional caution."
 
           Risk Note:
           - Trend risk

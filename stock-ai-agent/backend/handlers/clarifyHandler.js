@@ -4,6 +4,7 @@ const fs   = require('fs')
 const path = require('path')
 const { handlerDispatch } = require('../lib/logger')
 const { searchSymbol } = require('../services/pythonClient')
+const { symbolsMap } = require('../services/symbolValidator')
 
 const CACHE_PATH = path.resolve(__dirname, '../data/resolvedSymbols.json')
 
@@ -16,6 +17,25 @@ function _writeCache(query, symbol) {
     cache[query.toUpperCase()] = symbol
     fs.writeFileSync(CACHE_PATH, JSON.stringify(cache, null, 2))
   } catch { /* non-critical */ }
+}
+
+// Search local NSE/BSE symbol index for up to 3 matches by bare symbol or company name.
+function _searchLocal(query) {
+  const upper = query.toUpperCase()
+  const seen = new Set()
+  const results = []
+  for (const [, entry] of symbolsMap) {
+    if (results.length >= 3) break
+    if (seen.has(entry.symbol)) continue
+    const bare = entry.symbol.replace(/\.(NS|BO)$/, '').toUpperCase()
+    const symbolMatch = bare === upper || entry.symbol.toUpperCase() === upper
+    const nameMatch = entry.name && entry.name.toUpperCase().includes(upper)
+    if (symbolMatch || nameMatch) {
+      seen.add(entry.symbol)
+      results.push({ label: `${entry.symbol} — ${entry.name ?? entry.symbol}`, value: entry.symbol })
+    }
+  }
+  return results
 }
 
 const QUESTIONS = {
@@ -41,31 +61,39 @@ async function handleClarify({ reason, rejectedTicker, lastSymbol, userId, conve
   const t0 = Date.now()
 
   if (reason === 'ticker_not_found' && rejectedTicker) {
-    const candidates = await searchSymbol(rejectedTicker)
+    // Run local index + Python service in parallel for best coverage
+    const [localSuggestions, pythonCandidates] = await Promise.all([
+      Promise.resolve(_searchLocal(rejectedTicker)),
+      searchSymbol(rejectedTicker)
+    ])
 
-    if (candidates.length > 0) {
-      _writeCache(rejectedTicker, candidates[0].symbol)
+    // Merge: local pills first, then any non-duplicate Python results
+    const allSuggestions = [...localSuggestions]
+    const seenSymbols = new Set(localSuggestions.map(s => s.value))
+    for (const c of pythonCandidates) {
+      if (allSuggestions.length >= 3) break
+      if (!seenSymbols.has(c.symbol)) {
+        seenSymbols.add(c.symbol)
+        allSuggestions.push({ label: `${c.symbol} — ${c.name} (${c.exchange})`, value: c.symbol })
+      }
+    }
 
+    if (allSuggestions.length > 0) {
+      _writeCache(rejectedTicker, allSuggestions[0].value)
       handlerDispatch({
         user_id: userId, conversation_id: conversationId,
         handler: 'clarify', response_type: 'symbol_disambiguation',
         total_latency_ms: Date.now() - t0
       })
-
       const question = QUESTIONS.ticker_not_found(rejectedTicker)
       return {
-        type:          'symbol_disambiguation',
-        intent:        'CLARIFY',
-        ticker:        null,
+        type: 'clarification', intent: 'CLARIFY', ticker: null,
         responseStyle: 'clarification_needed',
-        query:         rejectedTicker,
-        candidates,
-        question,
-        reply:         question
+        question, suggestions: allSuggestions, reply: question
       }
     }
 
-    // Search returned nothing — fall through to plain clarification
+    // Nothing found anywhere
     const question = QUESTIONS.ticker_no_results(rejectedTicker)
     handlerDispatch({
       user_id: userId, conversation_id: conversationId,

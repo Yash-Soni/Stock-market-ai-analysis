@@ -89,6 +89,10 @@ export function AnalysisCard({
             {verdict}
           </p>
         </div>
+
+        <p className="text-xs text-muted-foreground text-center mt-4">
+          For informational purposes only. Not financial advice.
+        </p>
       </div>
     </div>
   )

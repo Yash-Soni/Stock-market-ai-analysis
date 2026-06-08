@@ -333,7 +333,7 @@ export function StockChat() {
             <div className="mx-auto box-border w-full min-w-0 max-w-full max-w-3xl overflow-x-hidden px-2 py-4 sm:px-4 sm:py-6 lg:px-6 max-lg:pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]">
               {dedupedMessages.map((message) => (
                 <ErrorBoundary key={message.id}>
-                  <ChatMessage message={message} />
+                  <ChatMessage message={message} onSend={handleSend} />
                 </ErrorBoundary>
               ))}
             </div>

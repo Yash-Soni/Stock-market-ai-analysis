@@ -70,9 +70,14 @@ export interface SymbolCandidate {
   exchange: string
 }
 
+export interface SuggestionItem {
+  label: string
+  value: string
+}
+
 export interface V2Clarification {
   question: string
-  suggestions?: string[]
+  suggestions?: Array<SuggestionItem | string>
   candidates?: SymbolCandidate[]
 }
 
@@ -92,21 +97,22 @@ export interface ChatMessageData {
 }
 
 /** Dispatches v2 typed responses to the correct renderer. Returns null for legacy/analysis_card messages. */
-function ChatMessageRenderer({ message }: { message: ChatMessageData }) {
+function ChatMessageRenderer({ message, onSend }: { message: ChatMessageData; onSend?: (text: string) => void }) {
   if (message.responseType === "focused_answer" && message.focusedAnswer) {
     return <FocusedAnswer {...message.focusedAnswer} />
   }
   if (message.responseType === "clarification" && message.clarification) {
-    return <Clarification {...message.clarification} />
+    return <Clarification {...message.clarification} onSend={onSend} />
   }
   return null
 }
 
 interface ChatMessageProps {
   message: ChatMessageData
+  onSend?: (text: string) => void
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, onSend }: ChatMessageProps) {
   const isUser = message.role === "user"
 
   const formatMessageTime = (timestamp: Date | string | number) => {
@@ -169,7 +175,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </div>
         <div className="flex-1 min-w-0 space-y-2 sm:space-y-3">
           {/* v2 typed responses: focused_answer and clarification */}
-          <ChatMessageRenderer message={message} />
+          <ChatMessageRenderer message={message} onSend={onSend} />
 
           {/* Legacy / analysis_card / data_card / plain-text rendering */}
           {message.responseType !== "focused_answer" && message.responseType !== "clarification" && (
