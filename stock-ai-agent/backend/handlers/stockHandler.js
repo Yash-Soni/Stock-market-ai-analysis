@@ -4,7 +4,20 @@ const fs   = require('fs')
 const path = require('path')
 
 const { getGroqClient, MODEL }   = require('../services/groqClient')
-const { llmCall, handlerDispatch } = require('../lib/logger')
+const { llmCall, handlerDispatch, logger } = require('../lib/logger')
+
+// Single retry on Groq 429 — wait 2s then try once more.
+// If the retry also fails, let the error bubble to dispatchChat's catch block.
+async function groqWithRetry(params) {
+  try {
+    return await getGroqClient().chat.completions.create(params)
+  } catch (err) {
+    if (err.status !== 429) throw err
+    logger.warn({ event: 'groq_rate_limited', purpose: params.purpose ?? 'unknown', retrying: true })
+    await new Promise(r => setTimeout(r, 2000))
+    return getGroqClient().chat.completions.create(params)
+  }
+}
 const { countTokens }            = require('../lib/tokenCounter')
 const { compute, getFundamentals } = require('../services/pythonClient')
 const { buildComprehensivePrompt, buildComprehensiveDataBlock } = require('../prompts/comprehensivePrompt')
@@ -187,7 +200,7 @@ async function handleStock(routerOutput, lastSymbol, userId, conversationId, cha
     })
 
     const llmT0 = Date.now()
-    const completion = await getGroqClient().chat.completions.create({
+    const completion = await groqWithRetry({
       model:    MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -252,7 +265,7 @@ async function handleStock(routerOutput, lastSymbol, userId, conversationId, cha
   const systemPrompt = buildFocusedPrompt(ticker, displayName, computed, routerOutput.user_question)
 
   const llmT0 = Date.now()
-  const completion = await getGroqClient().chat.completions.create({
+  const completion = await groqWithRetry({
     model:    MODEL,
     messages: [
       { role: 'system', content: systemPrompt },
