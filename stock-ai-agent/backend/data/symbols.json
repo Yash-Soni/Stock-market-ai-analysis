@@ -1,45 +1,5 @@
 [
   {
-    "symbol": "MSFT",
-    "name": "Microsoft Corporation",
-    "exchange": "NASDAQ"
-  },
-  {
-    "symbol": "NVDA",
-    "name": "NVIDIA Corporation",
-    "exchange": "NASDAQ"
-  },
-  {
-    "symbol": "AMZN",
-    "name": "Amazon.com Inc.",
-    "exchange": "NASDAQ"
-  },
-  {
-    "symbol": "GOOGL",
-    "name": "Alphabet Inc.",
-    "exchange": "NASDAQ"
-  },
-  {
-    "symbol": "META",
-    "name": "Meta Platforms Inc.",
-    "exchange": "NASDAQ"
-  },
-  {
-    "symbol": "TSLA",
-    "name": "Tesla Inc.",
-    "exchange": "NASDAQ"
-  },
-  {
-    "symbol": "ORCL",
-    "name": "Oracle Corporation",
-    "exchange": "NYSE"
-  },
-  {
-    "symbol": "RBRK",
-    "name": "Rubrik Inc.",
-    "exchange": "NYSE"
-  },
-  {
     "symbol": "20MICRONS.NS",
     "name": "20 Microns Limited",
     "exchange": "NSE"
@@ -52,6 +12,11 @@
   {
     "symbol": "360ONE.NS",
     "name": "360 ONE WAM LIMITED",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "3BBLACKBIO.NS",
+    "name": "3B Blackbio Dx Limited",
     "exchange": "NSE"
   },
   {
@@ -150,6 +115,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "ABANSENT.NS",
+    "name": "Abans Enterprises Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "ABB.NS",
     "name": "ABB India Limited",
     "exchange": "NSE"
@@ -192,6 +162,11 @@
   {
     "symbol": "ABMINTLLTD.NS",
     "name": "ABM International Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "ABMKNO.NS",
+    "name": "ABM Knowledgeware Limited",
     "exchange": "NSE"
   },
   {
@@ -242,6 +217,11 @@
   {
     "symbol": "ACMESOLAR.NS",
     "name": "Acme Solar Holdings Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "ACSTECH.NS",
+    "name": "ACS Technologies Limited",
     "exchange": "NSE"
   },
   {
@@ -445,6 +425,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "AHLWEST.NS",
+    "name": "Asian Hotels (West) Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "AIAENG.NS",
     "name": "AIA Engineering Limited",
     "exchange": "NSE"
@@ -490,6 +475,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "AKCAPIT.NS",
+    "name": "AK Capital Services Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "AKG.NS",
     "name": "Akg Exim Limited",
     "exchange": "NSE"
@@ -517,11 +507,6 @@
   {
     "symbol": "AKUMS.NS",
     "name": "Akums Drugs and Pharmaceuticals Limited",
-    "exchange": "NSE"
-  },
-  {
-    "symbol": "AKZOINDIA.NS",
-    "name": "Akzo Nobel India Limited",
     "exchange": "NSE"
   },
   {
@@ -615,6 +600,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "AMBALALSA.NS",
+    "name": "Ambalal Sarabhai Enterprises Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "AMBER.NS",
     "name": "Amber Enterprises India Limited",
     "exchange": "NSE"
@@ -637,6 +627,11 @@
   {
     "symbol": "AMDIND.NS",
     "name": "AMD Industries Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "AMIRCHAND.NS",
+    "name": "Amir Chand Jagdish Kumar (Exports) Limited",
     "exchange": "NSE"
   },
   {
@@ -830,6 +825,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "ARIHANT.NS",
+    "name": "Arihant Foundations & Housing Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "ARIHANTCAP.NS",
     "name": "Arihant Capital Markets Limited",
     "exchange": "NSE"
@@ -862,6 +862,11 @@
   {
     "symbol": "ARROWGREEN.NS",
     "name": "Arrow Greentech Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "ARSHIYA.NS",
+    "name": "Arshiya Limited",
     "exchange": "NSE"
   },
   {
@@ -930,6 +935,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "ASHIKA.NS",
+    "name": "Ashika Credit Capital Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "ASHIMASYN.NS",
     "name": "Ashima Limited",
     "exchange": "NSE"
@@ -982,6 +992,11 @@
   {
     "symbol": "ASPINWALL.NS",
     "name": "Aspinwall and Company Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "ASTAR.NS",
+    "name": "Asian Star Company Limited",
     "exchange": "NSE"
   },
   {
@@ -1255,6 +1270,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "BAJAJST.NS",
+    "name": "Bajaj Steel Industries Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "BAJEL.NS",
     "name": "Bajel Projects Limited",
     "exchange": "NSE"
@@ -1380,6 +1400,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "BATLIBOI.NS",
+    "name": "Batliboi Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "BAYERCROP.NS",
     "name": "Bayer Cropscience Limited",
     "exchange": "NSE"
@@ -1420,6 +1445,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "BCPL.NS",
+    "name": "BCPL Railway Infrastructure Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "BDL.NS",
     "name": "Bharat Dynamics Limited",
     "exchange": "NSE"
@@ -1440,6 +1470,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "BEEKAY.NS",
+    "name": "Beekay Steel Industries Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "BEL.NS",
     "name": "Bharat Electronics Limited",
     "exchange": "NSE"
@@ -1457,6 +1492,11 @@
   {
     "symbol": "BEML.NS",
     "name": "BEML Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "BENGALASM.NS",
+    "name": "Bengal & Assam Company Limited",
     "exchange": "NSE"
   },
   {
@@ -1510,11 +1550,6 @@
     "exchange": "NSE"
   },
   {
-    "symbol": "BHANDA-RE2.NS",
-    "name": "Bhandari Hosiery Exports Limited-RE",
-    "exchange": "NSE"
-  },
-  {
     "symbol": "BHANDARI.NS",
     "name": "Bhandari Hosiery Exports Limited",
     "exchange": "NSE"
@@ -1565,6 +1600,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "BI.NS",
+    "name": "Bilcare Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "BIGBLOC.NS",
     "name": "Bigbloc Construction Limited",
     "exchange": "NSE"
@@ -1582,6 +1622,11 @@
   {
     "symbol": "BILVYAPAR.NS",
     "name": "BIL VYAPAR LIMITED",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "BIMETAL.NS",
+    "name": "Bimetal Bearings Limited",
     "exchange": "NSE"
   },
   {
@@ -1615,8 +1660,18 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "BIRLAPREC.NS",
+    "name": "Birla Precision Technologies Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "BLACKBUCK.NS",
     "name": "BLACKBUCK LIMITED",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "BLACKROSE.NS",
+    "name": "Black Rose Inds. Limited",
     "exchange": "NSE"
   },
   {
@@ -1627,6 +1682,11 @@
   {
     "symbol": "BLBLIMITED.NS",
     "name": "BLB Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "BLIL.NS",
+    "name": "Balmer Lawrie Investments Limited",
     "exchange": "NSE"
   },
   {
@@ -1647,6 +1707,11 @@
   {
     "symbol": "BLSE.NS",
     "name": "BLS E-Services Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "BLUECHIP.NS",
+    "name": "Blue Chip India Limited",
     "exchange": "NSE"
   },
   {
@@ -1682,6 +1747,16 @@
   {
     "symbol": "BMWVENTLTD.NS",
     "name": "BMW Ventures Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "BNAGROCHEM.NS",
+    "name": "BN Agrochem Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "BNALTD.NS",
+    "name": "B & A Limited",
     "exchange": "NSE"
   },
   {
@@ -1792,6 +1867,11 @@
   {
     "symbol": "BTML.NS",
     "name": "Bodhi Tree Multimedia Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "BTTL.NS",
+    "name": "Bhilwara Technical Textiles Limited",
     "exchange": "NSE"
   },
   {
@@ -2095,11 +2175,6 @@
     "exchange": "NSE"
   },
   {
-    "symbol": "CIGNITITEC.NS",
-    "name": "Cigniti Technologies Limited",
-    "exchange": "NSE"
-  },
-  {
     "symbol": "CINELINE.NS",
     "name": "Cineline India Limited",
     "exchange": "NSE"
@@ -2112,6 +2187,11 @@
   {
     "symbol": "CIPLA.NS",
     "name": "Cipla Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "CLCIND.NS",
+    "name": "CLC Industries Limited",
     "exchange": "NSE"
   },
   {
@@ -2132,6 +2212,11 @@
   {
     "symbol": "CLSEL.NS",
     "name": "Chaman Lal Setia Exports Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "CMPDI.NS",
+    "name": "Central Mine Planning & Design Institute Limited",
     "exchange": "NSE"
   },
   {
@@ -2160,6 +2245,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "COCKERILL.NS",
+    "name": "John Cockerill India Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "COFFEEDAY.NS",
     "name": "Coffee Day Enterprises Limited",
     "exchange": "NSE"
@@ -2177,6 +2267,11 @@
   {
     "symbol": "COLPAL.NS",
     "name": "Colgate Palmolive (India) Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "COMFINTE.NS",
+    "name": "Comfort Intech Limited",
     "exchange": "NSE"
   },
   {
@@ -2375,6 +2470,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "DAICHI.NS",
+    "name": "Dai-Ichi Karkaria Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "DALBHARAT.NS",
     "name": "Dalmia Bharat Limited",
     "exchange": "NSE"
@@ -2507,6 +2607,11 @@
   {
     "symbol": "DECCANCE.NS",
     "name": "Deccan Cements Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "DECNGOLD.NS",
+    "name": "Deccan Gold Mines Limited",
     "exchange": "NSE"
   },
   {
@@ -2665,6 +2770,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "DISAQ.NS",
+    "name": "Disa India Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "DISHTV.NS",
     "name": "Dish TV India Limited",
     "exchange": "NSE"
@@ -2760,6 +2870,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "DRAGARWQ.NS",
+    "name": "Dr Agarwals Eye Hospital Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "DRCSYSTEMS.NS",
     "name": "DRC Systems India Limited",
     "exchange": "NSE"
@@ -2835,6 +2950,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "EASTSILK.NS",
+    "name": "Eastern Silk Industries Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "EBGNG.NS",
     "name": "GNG Electronics Limited",
     "exchange": "NSE"
@@ -2900,6 +3020,16 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "ELANTAS.NS",
+    "name": "Elantas Beck India Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "ELCIDIN.NS",
+    "name": "EL CID Investments Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "ELDEHSG.NS",
     "name": "Eldeco Housing And Industries Limited",
     "exchange": "NSE"
@@ -2935,8 +3065,18 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "ELITECON.NS",
+    "name": "Elitecon International Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "ELLEN.NS",
     "name": "Ellenbarrie Industrial Gases Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "ELPROINTL.NS",
+    "name": "Elpro International Limited",
     "exchange": "NSE"
   },
   {
@@ -2982,6 +3122,11 @@
   {
     "symbol": "EMMVEE.NS",
     "name": "Emmvee Photovoltaic Power Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "EMPOWER.NS",
+    "name": "Empower India Limited",
     "exchange": "NSE"
   },
   {
@@ -3080,6 +3225,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "ESSEN-RE3.NS",
+    "name": "Integra Essentia Limited-RE",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "ESSENTIA.NS",
     "name": "Integra Essentia Limited",
     "exchange": "NSE"
@@ -3127,11 +3277,6 @@
   {
     "symbol": "EVERESTIND.NS",
     "name": "Everest Industries Limited",
-    "exchange": "NSE"
-  },
-  {
-    "symbol": "EXCEL.NS",
-    "name": "Excel Realty N Infra Limited",
     "exchange": "NSE"
   },
   {
@@ -3200,6 +3345,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "FEDDERSHOL.NS",
+    "name": "Fedders Holding Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "FEDERALBNK.NS",
     "name": "The Federal Bank  Limited",
     "exchange": "NSE"
@@ -3217,6 +3367,11 @@
   {
     "symbol": "FELDVR.NS",
     "name": "Future Enterprises Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "FERMENTA.NS",
+    "name": "Fermenta Biotech Limited",
     "exchange": "NSE"
   },
   {
@@ -3340,6 +3495,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "FRONTSP.NS",
+    "name": "Frontier Springs Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "FSL.NS",
     "name": "Firstsource Solutions Limited",
     "exchange": "NSE"
@@ -3455,6 +3615,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "GAYAPROJ.NS",
+    "name": "Gayatri Projects Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "GCSL.NS",
     "name": "Gretex Corporate Services Limited",
     "exchange": "NSE"
@@ -3482,6 +3647,11 @@
   {
     "symbol": "GENESYS.NS",
     "name": "Genesys International Corporation Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "GENSOL.NS",
+    "name": "Gensol Engineering Limited",
     "exchange": "NSE"
   },
   {
@@ -3665,6 +3835,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "GNRL.NS",
+    "name": "Gujarat Natural Resources Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "GOACARBON.NS",
     "name": "Goa Carbon Limited",
     "exchange": "NSE"
@@ -3750,6 +3925,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "GOODYEAR.NS",
+    "name": "Goodyear India Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "GOPAL.NS",
     "name": "Gopal Snacks Limited",
     "exchange": "NSE"
@@ -3780,6 +3960,16 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "GRADIENTE.NS",
+    "name": "Gradiente Infotainment Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "GRANDOAK.NS",
+    "name": "Grand Oak Canyons Distillery Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "GRANULES.NS",
     "name": "Granules India Limited",
     "exchange": "NSE"
@@ -3792,6 +3982,16 @@
   {
     "symbol": "GRASIM.NS",
     "name": "Grasim Industries Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "GRAUWEIL.NS",
+    "name": "Grauer & Weil India Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "GRAVISSHO.NS",
+    "name": "Graviss Hospitality Limited",
     "exchange": "NSE"
   },
   {
@@ -3875,8 +4075,8 @@
     "exchange": "NSE"
   },
   {
-    "symbol": "GSPL.NS",
-    "name": "Gujarat State Petronet Limited",
+    "symbol": "GSPCROP.NS",
+    "name": "GSP Crop Science Limited",
     "exchange": "NSE"
   },
   {
@@ -3980,6 +4180,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "HALDYNGL.NS",
+    "name": "Haldyn Glass Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "HALEOSLABS.NS",
     "name": "HALEOS LABS LIMITED",
     "exchange": "NSE"
@@ -4035,6 +4240,16 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "HAWKINCOOK.NS",
+    "name": "Hawkins Cookers Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "HBESD.NS",
+    "name": "HB Estate Developers Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "HBLENGINE.NS",
     "name": "HBL Engineering Limited",
     "exchange": "NSE"
@@ -4052,11 +4267,6 @@
   {
     "symbol": "HCG.NS",
     "name": "Healthcare Global Enterprises Limited",
-    "exchange": "NSE"
-  },
-  {
-    "symbol": "HCG-RE.NS",
-    "name": "Healthcare Global Enterprises Limited-RE",
     "exchange": "NSE"
   },
   {
@@ -4090,8 +4300,18 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "HDIL.NS",
+    "name": "Housing Development and Infrastructure Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "HEADSUP.NS",
     "name": "Heads UP Ventures Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "HEALTHX.NS",
+    "name": "Health X Platform Limited",
     "exchange": "NSE"
   },
   {
@@ -4456,7 +4676,7 @@
   },
   {
     "symbol": "IGIL.NS",
-    "name": "International Gemmological Institute (India) Limited",
+    "name": "International Gemological Institute Limited",
     "exchange": "NSE"
   },
   {
@@ -4655,6 +4875,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "INDPRUD.NS",
+    "name": "Industrial & Prudential Investment Company Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "INDRAMEDCO.NS",
     "name": "Indraprastha Medical Corporation Limited",
     "exchange": "NSE"
@@ -4710,6 +4935,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "INNOVISION.NS",
+    "name": "Innovision Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "INOXGREEN.NS",
     "name": "Inox Green Energy Services Limited",
     "exchange": "NSE"
@@ -4757,6 +4987,11 @@
   {
     "symbol": "INVENTURE.NS",
     "name": "Inventure Growth & Securities Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "INVPRECQ.NS",
+    "name": "Investment & Precision Castings Limited",
     "exchange": "NSE"
   },
   {
@@ -4877,6 +5112,11 @@
   {
     "symbol": "IVP.NS",
     "name": "IVP Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "IWP.NS",
+    "name": "The Indian Wood Products Company Limited",
     "exchange": "NSE"
   },
   {
@@ -5095,11 +5335,6 @@
     "exchange": "NSE"
   },
   {
-    "symbol": "JPASSOCIAT.NS",
-    "name": "Jaiprakash Associates Limited",
-    "exchange": "NSE"
-  },
-  {
     "symbol": "JPOLYINVST.NS",
     "name": "Jindal Poly Investment and Finance Company Limited",
     "exchange": "NSE"
@@ -5127,6 +5362,11 @@
   {
     "symbol": "JSWCEMENT.NS",
     "name": "JSW Cement Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "JSWDULUX.NS",
+    "name": "JSW Dulux Limited",
     "exchange": "NSE"
   },
   {
@@ -5250,6 +5490,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "KAMAHOLD.NS",
+    "name": "Kama Holdings Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "KAMATHOTEL.NS",
     "name": "Kamat Hotels (I) Limited",
     "exchange": "NSE"
@@ -5267,6 +5512,11 @@
   {
     "symbol": "KANANIIND.NS",
     "name": "Kanani Industries Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "KANCHI.NS",
+    "name": "Kanchi Karpooram Limited",
     "exchange": "NSE"
   },
   {
@@ -5360,6 +5610,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "KENNAMET.NS",
+    "name": "Kennametal India Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "KERNEX.NS",
     "name": "Kernex Microsystems (India) Limited",
     "exchange": "NSE"
@@ -5425,8 +5680,18 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "KIRANVYPAR.NS",
+    "name": "Kiran Vyapar Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "KIRIINDUS.NS",
     "name": "Kiri Industries Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "KIRLFER.NS",
+    "name": "Kirloskar Ferrous Industries Limited",
     "exchange": "NSE"
   },
   {
@@ -5450,6 +5715,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "KISSHT.NS",
+    "name": "OnEMI Technology Solutions Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "KITEX.NS",
     "name": "Kitex Garments Limited",
     "exchange": "NSE"
@@ -5457,6 +5727,11 @@
   {
     "symbol": "KKCL.NS",
     "name": "Kewal Kiran Clothing Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "KLBRENG-B.NS",
+    "name": "Kilburn Engineering Limited",
     "exchange": "NSE"
   },
   {
@@ -5520,8 +5795,18 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "KOTIC.NS",
+    "name": "Kothari Industrial Corporation Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "KOTYARK.NS",
     "name": "Kotyark Industries Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "KOVAI.NS",
+    "name": "Kovai Medical Center & Hospital Limited",
     "exchange": "NSE"
   },
   {
@@ -5542,6 +5827,11 @@
   {
     "symbol": "KPITTECH.NS",
     "name": "KPIT Technologies Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "KPL.NS",
+    "name": "Kwality Pharmaceuticals Limited",
     "exchange": "NSE"
   },
   {
@@ -5675,6 +5965,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "LAHOTIOV.NS",
+    "name": "Lahoti Overseas Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "LAKPRE.NS",
     "name": "Lakshmi Precision Screws Limited",
     "exchange": "NSE"
@@ -5702,6 +5997,11 @@
   {
     "symbol": "LANDMARK.NS",
     "name": "Landmark Cars Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "LANDSMILL.NS",
+    "name": "Landsmill Green Limited",
     "exchange": "NSE"
   },
   {
@@ -5906,7 +6206,7 @@
   },
   {
     "symbol": "LTM.NS",
-    "name": "LTIMindtree Limited",
+    "name": "LTM Limited",
     "exchange": "NSE"
   },
   {
@@ -5975,6 +6275,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "MADHAVIPL.NS",
+    "name": "Madhav Infra Projects Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "MADHUCON.NS",
     "name": "Madhucon Projects Limited",
     "exchange": "NSE"
@@ -5982,6 +6287,11 @@
   {
     "symbol": "MADRASFERT.NS",
     "name": "Madras Fertilizers Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "MAFATIND.NS",
+    "name": "Mafatlal Industries Limited",
     "exchange": "NSE"
   },
   {
@@ -6042,6 +6352,11 @@
   {
     "symbol": "MAITHANALL.NS",
     "name": "Maithan Alloys Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "MAJESAUT.NS",
+    "name": "Majestic Auto Limited",
     "exchange": "NSE"
   },
   {
@@ -6270,6 +6585,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "MCCHRLS-B.NS",
+    "name": "Mac Charles India Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "MCL.NS",
     "name": "Madhav Copper Limited",
     "exchange": "NSE"
@@ -6330,6 +6650,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "MENNPIS.NS",
+    "name": "Menon Pistons Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "MENONBE.NS",
     "name": "Menon Bearings Limited",
     "exchange": "NSE"
@@ -6340,8 +6665,23 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "MERCANTILE.NS",
+    "name": "Mercantile Ventures Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "MERCURYEV.NS",
+    "name": "Mercury Ev-Tech Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "METROBRAND.NS",
     "name": "Metro Brands Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "METROGLOBL.NS",
+    "name": "Metroglobal Limited",
     "exchange": "NSE"
   },
   {
@@ -6442,6 +6782,11 @@
   {
     "symbol": "MMTC.NS",
     "name": "MMTC Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "MMWL.NS",
+    "name": "Media Matrix Worldwide Limited",
     "exchange": "NSE"
   },
   {
@@ -6675,11 +7020,6 @@
     "exchange": "NSE"
   },
   {
-    "symbol": "NAGAFERT.NS",
-    "name": "Nagarjuna Fertilizers and Chemicals Limited",
-    "exchange": "NSE"
-  },
-  {
     "symbol": "NAGREEKCAP.NS",
     "name": "Nagreeka Capital & Infrastructure Limited",
     "exchange": "NSE"
@@ -6737,6 +7077,11 @@
   {
     "symbol": "NATIONALUM.NS",
     "name": "National Aluminium Company Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NATIONSTD.NS",
+    "name": "National Standard (India) Limited",
     "exchange": "NSE"
   },
   {
@@ -6817,6 +7162,11 @@
   {
     "symbol": "NDTV.NS",
     "name": "New Delhi Television Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NEAGI.NS",
+    "name": "Neelamalai Agro Industries Limited",
     "exchange": "NSE"
   },
   {
@@ -6945,8 +7295,18 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "NILE.NS",
+    "name": "Nile Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "NILKAMAL.NS",
     "name": "Nilkamal Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NIMBSPROJ.NS",
+    "name": "Nimbus Projects Limited",
     "exchange": "NSE"
   },
   {
@@ -6970,6 +7330,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "NIRLON.NS",
+    "name": "Nirlon Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "NITCO.NS",
     "name": "Nitco Limited",
     "exchange": "NSE"
@@ -6982,6 +7347,11 @@
   {
     "symbol": "NITIRAJ.NS",
     "name": "Nitiraj Engineers Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NITTAGELA.NS",
+    "name": "Nitta Gelatin India Limited",
     "exchange": "NSE"
   },
   {
@@ -7027,6 +7397,11 @@
   {
     "symbol": "NOVAAGRI.NS",
     "name": "Nova Agritech Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NOVARTIND.NS",
+    "name": "Novartis India Limited",
     "exchange": "NSE"
   },
   {
@@ -7165,13 +7540,13 @@
     "exchange": "NSE"
   },
   {
-    "symbol": "OMKARCHEM.NS",
-    "name": "Omkar Speciality Chemicals Limited",
+    "symbol": "OMNI.NS",
+    "name": "Omnitech Engineering Limited",
     "exchange": "NSE"
   },
   {
-    "symbol": "OMNI.NS",
-    "name": "Omnitech Engineering Limited",
+    "symbol": "OMPOWER.NS",
+    "name": "Om Power Transmission Limited",
     "exchange": "NSE"
   },
   {
@@ -7590,6 +7965,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "PIONRINV.NS",
+    "name": "Pioneer Investcorp Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "PIRAMALFIN.NS",
     "name": "Piramal Finance Limited",
     "exchange": "NSE"
@@ -7622,6 +8002,11 @@
   {
     "symbol": "PLAZACABLE.NS",
     "name": "Plaza Wires Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "PML.NS",
+    "name": "Paul Merchants Limited",
     "exchange": "NSE"
   },
   {
@@ -7710,6 +8095,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "POWERICA.NS",
+    "name": "Powerica Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "POWERINDIA.NS",
     "name": "Hitachi Energy India Limited",
     "exchange": "NSE"
@@ -7740,6 +8130,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "PRADPME.NS",
+    "name": "Pradeep Metals Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "PRAENG.NS",
     "name": "Prajay Engineers Syndicate Limited",
     "exchange": "NSE"
@@ -7760,6 +8155,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "PRAVEG.NS",
+    "name": "Praveg Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "PRAXIS.NS",
     "name": "Praxis Home Retail Limited",
     "exchange": "NSE"
@@ -7777,6 +8177,11 @@
   {
     "symbol": "PRECWIRE.NS",
     "name": "Precision Wires India Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "PREMCO.NS",
+    "name": "Premco Global Limited",
     "exchange": "NSE"
   },
   {
@@ -7950,6 +8355,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "QUINT.NS",
+    "name": "Quint Digital Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "RACE.NS",
     "name": "Race Eco Chain Limited",
     "exchange": "NSE"
@@ -8012,6 +8422,11 @@
   {
     "symbol": "RAJOOENG.NS",
     "name": "Rajoo Engineers Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "RAJPALAYAM.NS",
+    "name": "Rajapalayam Mills Limited",
     "exchange": "NSE"
   },
   {
@@ -8315,6 +8730,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "RMC.NS",
+    "name": "RMC Switchgears Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "RMDRIP.NS",
     "name": "R M Drip and Sprinklers Systems Limited",
     "exchange": "NSE"
@@ -8410,8 +8830,23 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "RRIL.NS",
+    "name": "RRIL Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "RRKABEL.NS",
     "name": "R R Kabel Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "RSDFIN.NS",
+    "name": "RSD Finance Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "RSL.NS",
+    "name": "Rajputana Stainless Limited",
     "exchange": "NSE"
   },
   {
@@ -8550,6 +8985,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "SAHLIBHFI.NS",
+    "name": "Shalibhadra Finance Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "SAHYADRI.NS",
     "name": "Sahyadri Industries Limited",
     "exchange": "NSE"
@@ -8562,6 +9002,11 @@
   {
     "symbol": "SAILIFE.NS",
     "name": "Sai Life Sciences Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "SAIPARENT.NS",
+    "name": "Sai Parenterals Limited",
     "exchange": "NSE"
   },
   {
@@ -8635,11 +9080,6 @@
     "exchange": "NSE"
   },
   {
-    "symbol": "SANCO.NS",
-    "name": "Sanco Industries Limited",
-    "exchange": "NSE"
-  },
-  {
     "symbol": "SANDESH.NS",
     "name": "The Sandesh Limited",
     "exchange": "NSE"
@@ -8657,11 +9097,6 @@
   {
     "symbol": "SANGAMIND.NS",
     "name": "Sangam (India) Limited",
-    "exchange": "NSE"
-  },
-  {
-    "symbol": "SANGHIIND.NS",
-    "name": "Sanghi Industries Limited",
     "exchange": "NSE"
   },
   {
@@ -8705,6 +9140,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "SAPPL.NS",
+    "name": "Shree Ajit Pulp & Paper Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "SARDAEN.NS",
     "name": "Sarda Energy & Minerals Limited",
     "exchange": "NSE"
@@ -8730,11 +9170,6 @@
     "exchange": "NSE"
   },
   {
-    "symbol": "SASTASUNDR.NS",
-    "name": "Sastasundar Ventures Limited",
-    "exchange": "NSE"
-  },
-  {
     "symbol": "SATIA.NS",
     "name": "Satia Industries Limited",
     "exchange": "NSE"
@@ -8747,6 +9182,11 @@
   {
     "symbol": "SAURASHCEM.NS",
     "name": "Saurashtra Cement Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "SAYAJIHOTL.NS",
+    "name": "Sayaji Hotels Limited",
     "exchange": "NSE"
   },
   {
@@ -8782,6 +9222,11 @@
   {
     "symbol": "SBIN.NS",
     "name": "State Bank of India",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "SCANSTL.NS",
+    "name": "Scan Steels Limited",
     "exchange": "NSE"
   },
   {
@@ -8842,6 +9287,11 @@
   {
     "symbol": "SEDEMAC.NS",
     "name": "SEDEMAC Mechatronics Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "SEIL.NS",
+    "name": "Shanti Educational Initiatives Limited",
     "exchange": "NSE"
   },
   {
@@ -8995,8 +9445,18 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "SHARDUL.NS",
+    "name": "Shardul Securities Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "SHAREINDIA.NS",
     "name": "Share India Securities Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "SHBAJRG.NS",
+    "name": "Shri Bajrang Alliance Limited",
     "exchange": "NSE"
   },
   {
@@ -9017,6 +9477,11 @@
   {
     "symbol": "SHILPAMED.NS",
     "name": "Shilpa Medicare Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "SHINDL.NS",
+    "name": "Sharat Industries Limited",
     "exchange": "NSE"
   },
   {
@@ -9095,6 +9560,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "SHRIKRISH.NS",
+    "name": "Shri Krishna Devcon Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "SHRINGARMS.NS",
     "name": "Shringar House of Mangalsutra Limited",
     "exchange": "NSE"
@@ -9127,6 +9597,11 @@
   {
     "symbol": "SHYAMTEL.NS",
     "name": "Shyam Telecom Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "SICAGEN.NS",
+    "name": "Sicagen India Limited",
     "exchange": "NSE"
   },
   {
@@ -9167,6 +9642,11 @@
   {
     "symbol": "SIGNPOST.NS",
     "name": "Signpost India Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "SIKA.NS",
+    "name": "Sika Interplant Systems Limited",
     "exchange": "NSE"
   },
   {
@@ -9217,6 +9697,11 @@
   {
     "symbol": "SINDHUTRAD.NS",
     "name": "Sindhu Trade Links Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "SINGERIND.NS",
+    "name": "Singer India Limited",
     "exchange": "NSE"
   },
   {
@@ -9362,6 +9847,11 @@
   {
     "symbol": "SONACOMS.NS",
     "name": "Sona BLW Precision Forgings Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "SONAL.NS",
+    "name": "Sonal Mercantile Limited",
     "exchange": "NSE"
   },
   {
@@ -9770,6 +10260,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "SURYALA.NS",
+    "name": "Suryalata Spinning Mills Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "SURYALAXMI.NS",
     "name": "Suryalakshmi Cotton Mills Limited",
     "exchange": "NSE"
@@ -9875,6 +10370,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "TAALTECH.NS",
+    "name": "Taal Tech Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "TAINWALCHM.NS",
     "name": "Tainwala Chemical and Plastic (I) Limited",
     "exchange": "NSE"
@@ -9892,6 +10392,11 @@
   {
     "symbol": "TALBROAUTO.NS",
     "name": "Talbros Automotive Components Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "TAMBOLIIN.NS",
+    "name": "Tamboli Industries Limited",
     "exchange": "NSE"
   },
   {
@@ -10050,6 +10555,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "TECHNVISN.NS",
+    "name": "TechNVision Ventures Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "TECILCHEM.NS",
     "name": "TECIL Chemicals and Hydro Power Limited",
     "exchange": "NSE"
@@ -10107,6 +10617,16 @@
   {
     "symbol": "TGBHOTELS.NS",
     "name": "TGB Banquets And Hotels Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "THACKER.NS",
+    "name": "Thacker & Company Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "THAKDEV.NS",
+    "name": "Thakkers Developers Limited",
     "exchange": "NSE"
   },
   {
@@ -10192,6 +10712,11 @@
   {
     "symbol": "TIMETECHNO.NS",
     "name": "Time Technoplast Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "TIMEX.NS",
+    "name": "Timex Group India Limited",
     "exchange": "NSE"
   },
   {
@@ -10307,6 +10832,11 @@
   {
     "symbol": "TRACXN.NS",
     "name": "Tracxn Technologies Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "TRANSPEK.NS",
+    "name": "Transpek Industry Limited",
     "exchange": "NSE"
   },
   {
@@ -10497,6 +11027,11 @@
   {
     "symbol": "ULTRACEMCO.NS",
     "name": "UltraTech Cement Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "ULTRAMAR.NS",
+    "name": "Ultramarine & Pigments Limited",
     "exchange": "NSE"
   },
   {
@@ -10730,6 +11265,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "VELJAN.NS",
+    "name": "Veljan Denison Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "VENKEYS.NS",
     "name": "Venky's (India) Limited",
     "exchange": "NSE"
@@ -10885,13 +11425,13 @@
     "exchange": "NSE"
   },
   {
-    "symbol": "VISAKAIND.NS",
-    "name": "Visaka Industries Limited",
+    "symbol": "VISACHROME.NS",
+    "name": "VISA Chrome Limited",
     "exchange": "NSE"
   },
   {
-    "symbol": "VISASTEEL.NS",
-    "name": "Visa Steel Limited",
+    "symbol": "VISAKAIND.NS",
+    "name": "Visaka Industries Limited",
     "exchange": "NSE"
   },
   {
@@ -10907,6 +11447,11 @@
   {
     "symbol": "VITAL.NS",
     "name": "Vital Chemtech Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "VIVIANA.NS",
+    "name": "Viviana Power Tech Limited",
     "exchange": "NSE"
   },
   {
@@ -11075,6 +11620,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "WELSPLSOL.NS",
+    "name": "Welspun Specialty Solutions Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "WELSPUNLIV.NS",
     "name": "Welspun Living Limited",
     "exchange": "NSE"
@@ -11115,6 +11665,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "WIMPLAST.NS",
+    "name": "Wim Plast Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "WINDLAS.NS",
     "name": "Windlas Biotech Limited",
     "exchange": "NSE"
@@ -11152,6 +11707,11 @@
   {
     "symbol": "WORTHPERI.NS",
     "name": "Worth Peripherals Limited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "WPIL.NS",
+    "name": "WPIL Limited",
     "exchange": "NSE"
   },
   {
@@ -11255,6 +11815,11 @@
     "exchange": "NSE"
   },
   {
+    "symbol": "ZFSTEERING.NS",
+    "name": "ZF Steering Gear (India) Limited",
+    "exchange": "NSE"
+  },
+  {
     "symbol": "ZIMLAB.NS",
     "name": "Zim Laboratories Limited",
     "exchange": "NSE"
@@ -11272,6 +11837,11 @@
   {
     "symbol": "ZOTA.NS",
     "name": "Zota Health Care LImited",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "ZSARACOM.NS",
+    "name": "Saraswati Commercial India Limited",
     "exchange": "NSE"
   },
   {
@@ -11293,25 +11863,5 @@
     "symbol": "ZYDUSWELL.NS",
     "name": "Zydus Wellness Limited",
     "exchange": "NSE"
-  },
-  {
-    "symbol": "XOM",
-    "name": "Exxon Mobil Corporation",
-    "exchange": "NYQ"
-  },
-  {
-    "symbol": "MINDSPACE-RR.NS",
-    "name": "MINDSPACE BUSINESS P REIT",
-    "exchange": "NSI"
-  },
-  {
-    "symbol": "IRBINVIT-IV.NS",
-    "name": "IRB INVIT FUND",
-    "exchange": "NSI"
-  },
-  {
-    "symbol": "EMBASSY.BO",
-    "name": "Embassy Office Parks REIT",
-    "exchange": "BSE"
   }
 ]

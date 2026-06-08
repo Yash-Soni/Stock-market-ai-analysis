@@ -105,7 +105,7 @@ async function dispatchChat(req, res, isV2) {
       case "GENERAL":     response = await handleGeneral(rOut, userId, conversationId, recentMessages); break
       default: {
         const reason = rOut._unresolved_ticker ? "ticker_not_found" : rOut._fallback_reason ? "ambiguous_message" : "low_confidence"
-        response = handleClarify({ reason, rejectedTicker: rOut._unresolved_ticker, lastSymbol, userId, conversationId })
+        response = await handleClarify({ reason, rejectedTicker: rOut._unresolved_ticker, lastSymbol, userId, conversationId })
       }
     }
 

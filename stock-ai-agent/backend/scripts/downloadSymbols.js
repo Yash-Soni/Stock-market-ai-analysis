@@ -58,7 +58,8 @@ async function loadNSE() {
     .filter((s) => s.symbol && s.name)
 }
 
-async function loadFMP() {
+
+async function loadFMPUS() {
   const key = process.env.FMP_API_KEY
   if (!key) return []
   const res = await axios.get(
@@ -66,14 +67,15 @@ async function loadFMP() {
     { timeout: HTTP_TIMEOUT_MS }
   )
   const list = res.data || []
+  // Keep only US-exchange stocks (no suffix, exchange is NASDAQ/NYSE/AMEX/NYSEArca etc.)
+  const US_EXCHANGES = new Set(["NASDAQ", "NYSE", "AMEX", "NYSEArca", "NYSEARCA", "NasdaqGS", "NasdaqGM", "NasdaqCM"])
   return list
-    .filter((s) => s.symbol && s.name)
-    .map((s) => ({ symbol: s.symbol, name: s.name, exchange: s.exchangeShortName || "FMP" }))
+    .filter((s) => s.symbol && s.name && !s.symbol.includes(".") && US_EXCHANGES.has(s.exchangeShortName))
+    .map((s) => ({ symbol: s.symbol, name: s.name, exchange: s.exchangeShortName }))
 }
 
 async function build() {
   const outPath = path.join(__dirname, "..", "data", "symbols.json")
-  let symbols = []
 
   const tryLoad = async (name, fn) => {
     try {
@@ -85,27 +87,32 @@ async function build() {
     }
   }
 
-  const [nasdaq, nyse, nse] = await Promise.all([
-    tryLoad("NASDAQ", loadUS),
-    tryLoad("NYSE", loadNYSE),
+  // Always run NSE + FMP US in parallel — free NASDAQ/NYSE sources are unreliable
+  const [nse, fmpUS] = await Promise.all([
     tryLoad("NSE", loadNSE),
+    tryLoad("FMP-US", loadFMPUS),
   ])
 
-  symbols = [...nasdaq, ...nyse, ...nse]
-
-  if (symbols.length === 0) {
-    console.log("All free sources failed or timed out. Trying FMP (requires FMP_API_KEY in .env)...")
-    symbols = await tryLoad("FMP", loadFMP)
+  // Deduplicate by symbol — NSE takes priority for .NS symbols
+  const seen = new Set()
+  const symbols = []
+  for (const s of [...nse, ...fmpUS]) {
+    if (s.symbol && !seen.has(s.symbol)) {
+      seen.add(s.symbol)
+      symbols.push(s)
+    }
   }
 
   if (symbols.length === 0) {
-    console.error("Could not fetch any symbols. Check network, VPN, or add FMP_API_KEY to backend/.env")
+    console.error("Could not fetch any symbols. Check network or FMP_API_KEY in backend/.env")
     process.exit(1)
   }
 
   fs.mkdirSync(path.dirname(outPath), { recursive: true })
   fs.writeFileSync(outPath, JSON.stringify(symbols, null, 2))
-  console.log("Symbols saved:", symbols.length, "→", outPath)
+  const nseCount = symbols.filter(s => s.exchange === "NSE").length
+  const usCount  = symbols.filter(s => s.exchange !== "NSE").length
+  console.log(`Symbols saved: ${symbols.length} total (NSE: ${nseCount}, US: ${usCount}) → ${outPath}`)
 }
 
 build().catch((e) => {

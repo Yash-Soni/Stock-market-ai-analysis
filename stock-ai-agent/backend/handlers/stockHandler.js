@@ -118,7 +118,7 @@ async function handleStock(routerOutput, lastSymbol, userId, conversationId, cha
   }
 
   if (!ticker) {
-    return handleClarify({
+    return await handleClarify({
       reason:          'followup_no_context',
       lastSymbol,
       userId,
@@ -156,7 +156,7 @@ async function handleStock(routerOutput, lastSymbol, userId, conversationId, cha
     sectorAllocation = results[3] ?? null
   } catch (err) {
     if (err.type === 'TICKER_NOT_FOUND') {
-      return handleClarify({
+      return await handleClarify({
         reason:          'ticker_not_found',
         rejectedTicker:  displayName,
         userId,

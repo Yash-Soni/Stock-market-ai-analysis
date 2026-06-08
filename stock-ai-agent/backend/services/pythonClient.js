@@ -126,4 +126,23 @@ async function getFundamentals(ticker, ctx = {}) {
   }
 }
 
-module.exports = { compute, getCapabilities, getFundamentals }
+/**
+ * Search for up to 3 US (NYSE/NASDAQ) or Indian (NSE/BSE) candidates for a company name.
+ * Returns [] on any error so callers can degrade gracefully.
+ *
+ * @param {string} query - Company name as typed by the user
+ * @returns {Promise<Array<{symbol, name, exchange}>>}
+ */
+async function searchSymbol(query) {
+  try {
+    const res = await axios.get(`${TA_BASE_URL}/search-symbol`, {
+      params: { q: query },
+      timeout: 8000
+    })
+    return res.data.candidates || []
+  } catch {
+    return []
+  }
+}
+
+module.exports = { compute, getCapabilities, getFundamentals, searchSymbol }

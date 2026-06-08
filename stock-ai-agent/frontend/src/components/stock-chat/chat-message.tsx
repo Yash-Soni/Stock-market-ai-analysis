@@ -64,9 +64,16 @@ export interface V2FocusedAnswer {
   reply: string
 }
 
+export interface SymbolCandidate {
+  symbol: string
+  name: string
+  exchange: string
+}
+
 export interface V2Clarification {
   question: string
   suggestions?: string[]
+  candidates?: SymbolCandidate[]
 }
 
 export interface ChatMessageData {

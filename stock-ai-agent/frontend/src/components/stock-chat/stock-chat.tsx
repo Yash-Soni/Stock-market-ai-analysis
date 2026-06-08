@@ -145,11 +145,12 @@ export function StockChat() {
           reply: data.reply ?? "",
         }
         responseMessage.content = data.reply ?? ""
-      } else if (data.type === "clarification") {
+      } else if (data.type === "clarification" || data.type === "symbol_disambiguation") {
         responseMessage.responseType = "clarification"
         responseMessage.clarification = {
           question: data.question ?? data.reply ?? "",
           suggestions: data.suggestions ?? [],
+          candidates: data.candidates ?? [],
         }
         responseMessage.content = data.question ?? data.reply ?? ""
       } else {

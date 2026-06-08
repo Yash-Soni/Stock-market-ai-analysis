@@ -557,6 +557,49 @@ app = FastAPI()
 
 # ─── Existing endpoints (unchanged) ──────────────────────────────────────────
 
+_ALLOWED_EXCHANGES = {"NYQ", "NMS", "NGM", "NCM", "ASE", "NasdaqGS", "NasdaqGM", "NasdaqCM", "NSI", "BSE"}
+_EXCHANGE_LABELS   = {
+    "NYQ": "NYSE", "NMS": "NASDAQ", "NGM": "NASDAQ", "NCM": "NASDAQ",
+    "ASE": "AMEX", "NasdaqGS": "NASDAQ", "NasdaqGM": "NASDAQ", "NasdaqCM": "NASDAQ",
+    "NSI": "NSE",  "BSE": "BSE",
+}
+
+@app.get("/search-symbol")
+def search_symbol(q: str):
+    """Return up to 3 US (NYSE/NASDAQ) or Indian (NSE/BSE) candidates for a company name."""
+    try:
+        if not q or not q.strip():
+            return {"candidates": []}
+        quotes = _search_symbol(q.strip())
+        if not quotes and len(q.split()) > 2:
+            quotes = _search_symbol(" ".join(q.split()[:2]))
+        candidates = []
+        seen = set()
+        for quote in (quotes or []):
+            if isinstance(quote, dict):
+                sym      = quote.get("symbol", "")
+                exchange = quote.get("exchange", "")
+                name     = quote.get("shortname") or quote.get("longname") or sym
+            else:
+                sym      = getattr(quote, "symbol", "")
+                exchange = getattr(quote, "exchange", "")
+                name     = getattr(quote, "shortname", None) or getattr(quote, "longname", None) or sym
+            if not sym or exchange not in _ALLOWED_EXCHANGES or sym in seen:
+                continue
+            seen.add(sym)
+            candidates.append({
+                "symbol":   sym,
+                "name":     name,
+                "exchange": _EXCHANGE_LABELS.get(exchange, exchange),
+            })
+            if len(candidates) >= 3:
+                break
+        return {"candidates": candidates}
+    except Exception as e:
+        print("search-symbol error:", e)
+        return {"candidates": []}
+
+
 @app.get("/resolve-symbol")
 def resolve_symbol(q: str):
     try:

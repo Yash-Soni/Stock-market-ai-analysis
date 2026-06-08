@@ -1,6 +1,11 @@
 'use strict'
 
 const { INDICATOR_VOCAB } = require('./constants')
+const { STOPWORDS } = require('../services/symbolValidator')
+const { _readCache } = require('../handlers/clarifyHandler')
+
+// Bare uppercase letters, 2–5 chars — matches US ticker pattern (AAPL, TSLA, GOOGL etc.)
+const US_TICKER_RE = /^[A-Z]{2,5}$/
 
 const VALID_INTENTS = new Set(['STOCK_QUERY', 'PORTFOLIO', 'MARKET', 'GENERAL', 'CLARIFY'])
 const VALID_TICKER_SOURCES = new Set(['explicit', 'followup', 'none'])
@@ -27,6 +32,11 @@ function normalizeTicker(raw, symbolsMap) {
   const t = raw.trim().toUpperCase()
   if (t.length < 3) return null
 
+  // 1. Previously confirmed resolution (written by clarifyHandler when user saw candidates)
+  const cache = _readCache()
+  if (cache[t]) return cache[t]
+
+  // 2. Indian symbol map (NSE/BSE)
   if (symbolsMap.has(t)) return symbolsMap.get(t).symbol
 
   const withNS = t + '.NS'
@@ -34,6 +44,9 @@ function normalizeTicker(raw, symbolsMap) {
 
   const withBO = t + '.BO'
   if (symbolsMap.has(withBO)) return symbolsMap.get(withBO).symbol
+
+  // 3. Bare US ticker pattern — pass through and let yfinance validate
+  if (US_TICKER_RE.test(t) && !STOPWORDS.has(t.toLowerCase())) return t
 
   return null
 }
