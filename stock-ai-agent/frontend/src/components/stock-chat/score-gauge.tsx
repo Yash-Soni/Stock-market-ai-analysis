@@ -5,9 +5,10 @@ interface ScoreGaugeProps {
   max: number
   label: string
   size?: "sm" | "md"
+  invert?: boolean 
 }
 
-export function ScoreGauge({ value, max, label, size = "md" }: ScoreGaugeProps) {
+export function ScoreGauge({ value, max, label, size = "md", invert = false }: ScoreGaugeProps) {
   const percentage = (value / max) * 100
   const radius = size === "md" ? 40 : 30
   const strokeWidth = size === "md" ? 6 : 5
@@ -16,12 +17,21 @@ export function ScoreGauge({ value, max, label, size = "md" }: ScoreGaugeProps) 
   const svgSize = (radius + strokeWidth) * 2
 
   const getColor = () => {
+    if (invert) {
+      if (percentage >= 70) return "text-danger"   // high risk = red
+      if (percentage >= 40) return "text-warning"
+      return "text-success"                         // low risk = green
+    }
     if (percentage >= 70) return "text-success"
     if (percentage >= 40) return "text-warning"
     return "text-danger"
   }
-
   const getTrackColor = () => {
+    if (invert) {
+      if (percentage >= 70) return "text-danger/15"
+      if (percentage >= 40) return "text-warning/15"
+      return "text-success/15"
+    }
     if (percentage >= 70) return "text-success/15"
     if (percentage >= 40) return "text-warning/15"
     return "text-danger/15"

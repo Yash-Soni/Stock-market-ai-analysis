@@ -219,6 +219,7 @@ export function ChatMessage({ message, onSend }: ChatMessageProps) {
                         max={100}
                         label="Risk"
                         size="sm"
+                        invert
                       />
                     </div>
                   </div>
