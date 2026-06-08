@@ -400,6 +400,29 @@ def _compute_52_week_range(df, params):
     }
 
 
+def _compute_price_history(df, params):
+    """Returns last 90 trading days as OHLCV records with Unix timestamp (seconds) dates."""
+    cols = [c for c in ["open", "high", "low", "close", "volume"] if c in df.columns]
+    if "close" not in cols:
+        return []
+    recent = df[cols].tail(90)
+    result = []
+    for date_idx, row in recent.iterrows():
+        try:
+            ts = int(pd.Timestamp(date_idx).replace(tzinfo=None).timestamp())
+        except Exception:
+            continue
+        result.append({
+            "date":   ts,
+            "open":   round(float(row["open"]),   2) if "open"   in cols else round(float(row["close"]), 2),
+            "high":   round(float(row["high"]),   2) if "high"   in cols else round(float(row["close"]), 2),
+            "low":    round(float(row["low"]),    2) if "low"    in cols else round(float(row["close"]), 2),
+            "close":  round(float(row["close"]),  2),
+            "volume": int(row["volume"]) if "volume" in cols and pd.notna(row["volume"]) else 0,
+        })
+    return result
+
+
 def _compute_full_analysis_bundle(df, params):
     """
     Returns the complete data bundle consumed by comprehensivePrompt
@@ -537,6 +560,8 @@ INDICATOR_REGISTRY: Dict[str, Any] = {
     # Levels
     "support_resistance": _compute_support_resistance,
     "52_week_range":      _compute_52_week_range,
+    # Chart
+    "price_history": _compute_price_history,
     # Bundle
     "full_analysis_bundle": _compute_full_analysis_bundle,
 }

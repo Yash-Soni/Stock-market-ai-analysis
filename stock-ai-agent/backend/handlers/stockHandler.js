@@ -36,7 +36,7 @@ try {
 // Fundamentals are fetched separately via getFundamentals().
 const BUNDLE_EXPANSION = [
   'rsi', 'ema_20', 'ema_50', 'macd', 'atr',
-  'volume_avg_20', 'support_resistance', '52_week_range'
+  'volume_avg_20', 'support_resistance', '52_week_range', 'price_history'
 ]
 
 function _getMFOverlap(symbol) {
@@ -256,6 +256,7 @@ async function handleStock(routerOutput, lastSymbol, userId, conversationId, cha
       revenueGrowth: fundamentals?.revenueGrowth ?? null,
       avg_dividend:      null,
       recent_dividends:  [],
+      price_history:     computed.price_history ?? null,
       macroSummary,
       reply:       completion.choices[0].message.content
     }

@@ -13,12 +13,21 @@ function openInZerodhaURL(symbol: string): string | null {
   return null
 }
 import { StructuredAnalysis } from "./analysis-sections"
-import { Sparkline } from "./sparkline"
+import { StockChart } from "./stock-chart"
 import { ScoreGauge } from "./score-gauge"
 import { MetricsCard } from "./metrics-card"
 import { StockHeader } from "./stock-header.tsx"
 import { AnalysisCard } from "./analysis-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
+
+export interface OhlcvBar {
+  date: number
+  open: number
+  high: number
+  low: number
+  close: number
+  volume: number
+}
 
 export interface StockAnalysis {
   symbol: string
@@ -52,6 +61,9 @@ export interface StockAnalysis {
     prices: number[],
     dates: string[]
   }
+  price_history?: OhlcvBar[] | null,
+  ema20?: number | null,
+  ema50?: number | null,
   dividend_yield?: number,
   recent_dividends?: { date: string, amount: number }[],
   avg_dividend?: number,
@@ -224,44 +236,14 @@ export function ChatMessage({ message, onSend }: ChatMessageProps) {
                     </div>
                   </div>
 
-                  {analysis.chart_data?.prices && analysis.chart_data.prices.length >= 2 && (
-                    <div className="rounded-xl border border-border/70 bg-background/50 min-w-0 overflow-hidden p-2.5 sm:p-4">
-                      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-                        <p className="text-xs font-medium text-muted-foreground">Price (10d)</p>
-                        <div className="text-right text-xs text-muted-foreground min-w-0">
-                          <span className="font-mono text-foreground">
-                            {analysis.currency === "INR" ? "₹" : "$"}
-                            {analysis.chart_data.prices[analysis.chart_data.prices.length - 1].toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                          <span className="ml-1.5 whitespace-nowrap">
-                            (Range {Math.min(...analysis.chart_data.prices).toFixed(2)} – {Math.max(...analysis.chart_data.prices).toFixed(2)})
-                          </span>
-                        </div>
-                      </div>
-                      <Sparkline
-                        data={analysis.chart_data.prices}
-                        className="w-full h-16 min-w-0"
-                        segmentColors
-                      />
-                      {(analysis.chart_data.dates?.length === analysis.chart_data.prices.length ? (
-                        <div className="mt-2 space-y-1 text-[10px] text-muted-foreground font-mono">
-                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 justify-between">
-                            {analysis.chart_data.dates.map((d) => (
-                              <span key={d} title={d} className="min-w-0">
-                                {d.slice(5)}
-                              </span>
-                            ))}
-                          </div>
-                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 justify-between">
-                            {analysis.chart_data.prices.map((p, i) => (
-                              <span key={`${analysis.chart_data!.dates![i]}-${p}`} className="min-w-0">
-                                {(analysis.currency === "INR" ? "₹" : "$")}{p.toFixed(2)}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null)}
-                    </div>
+                  {analysis.price_history && analysis.price_history.length > 0 && (
+                    <StockChart
+                      data={analysis.price_history}
+                      ema20={analysis.ema20 ?? null}
+                      ema50={analysis.ema50 ?? null}
+                      currency={analysis.currency}
+                      ticker={analysis.symbol}
+                    />
                   )}
 
                   <Tabs defaultValue="technicals" className="w-full min-w-0 max-w-full overflow-x-hidden">

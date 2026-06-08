@@ -22,6 +22,7 @@ export interface BackendChatResponse {
     prices: number[],
     dates: string[]
   },
+  price_history?: Array<{date: number; open: number; high: number; low: number; close: number; volume: number}> | null,
   dividend_yield?: number,
   recent_dividends?: { date: string, amount: number }[],
   avg_dividend?: number,
@@ -197,6 +198,9 @@ const isBearish =
     analysisMarkdown: data.reply || undefined,
     macroSummary: macroSummary,
     chart_data: data.chart_data,
+    price_history: data.price_history ?? null,
+    ema20: data.ema20 ?? null,
+    ema50: data.ema50 ?? null,
     dividend_yield: data.dividend_yield,
     recent_dividends: data.recent_dividends,
     avg_dividend: data.avg_dividend,
