@@ -130,12 +130,12 @@ const STATIC_PROMPT = `You are a professional portfolio manager managing institu
           - False reversal risk
 
           Long-term View:
-          - Profitability (ROE)
-          - Leverage (Debt)
-          - Growth
+          - If PE, ROE, Debt/Equity, and Revenue Growth are all null or "Not Available":
+            Write exactly one sentence: "Fundamental data is unavailable for this stock — check Screener.in for financial metrics."
+            Do not list individual missing fields. Do not write "Unfortunately". Do not write multiple bullets about absence. Do not mention specific websites more than once.
+          - If at least one fundamental is available, write a normal long-term view covering profitability (ROE), leverage (Debt/Equity), and growth. Note any missing metrics in one phrase only. Never write more than one sentence about missing data.
 
-          Evaluate dividend strength:
-
+          Evaluate dividend strength if data is present:
             - Frequent dividends → stable cash flow
             - High dividend → income stock
             - Irregular dividends → less predictable
@@ -215,8 +215,6 @@ function buildComprehensiveDataBlock({ userQuestion, computed, fundamentals, sco
   const atr  = c.atr
   const close = c['52_week_range']?.current ?? c.support_resistance?.current ?? null
 
-  const noFundamentals = f.pe == null && f.roe == null && f.debtToEquity == null && f.revenueGrowth == null
-
   return `User asked: "${userQuestion}"
 
 RSI: ${rsi ?? 'N/A'}
@@ -238,7 +236,6 @@ ROE: ${f.roe != null ? f.roe : 'Not Available'}
 PE Ratio: ${f.pe != null ? f.pe : 'Not Available'}
 Debt to Equity: ${f.debtToEquity != null ? f.debtToEquity : 'Not Available'}
 Revenue Growth: ${f.revenueGrowth != null ? f.revenueGrowth : 'Not Available'}
-${noFundamentals ? '\n⚠️ No fundamental data is available for this stock from automated sources. In your Long-term View section, explicitly tell the user that PE, ROE, Debt/Equity, and Revenue Growth could not be fetched, and suggest they check Screener.in or Tickertape.in for this data.' : ''}
 
 MF Overlap: ${mfOverlap?.length ? `Yes, held via: ${mfOverlap.join(', ')}` : 'No'}`
 }

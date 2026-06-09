@@ -39,6 +39,8 @@ export function StockChat() {
   const [portfolioLoading, setPortfolioLoading] = useState(false)
   const [analyzeLoading, setAnalyzeLoading] = useState(false)
   const submittingRef = useRef(false)
+  const [retryCountdown, setRetryCountdown] = useState(0)
+  const [rateLimitMsgId, setRateLimitMsgId] = useState<string | null>(null)
 
   const { user } = useContext(AuthContext);
 
@@ -67,6 +69,30 @@ export function StockChat() {
   useEffect(() => {
     scrollToBottom()
   }, [messages, scrollToBottom])
+
+  // Countdown timer for rate-limit cooldown. Ticks every second and updates the
+  // in-chat message. When it hits 0 the transient rate-limit message is removed.
+  useEffect(() => {
+    if (retryCountdown <= 0) {
+      if (rateLimitMsgId) {
+        setMessages(prev => prev.filter(m => m.id !== rateLimitMsgId))
+        setRateLimitMsgId(null)
+      }
+      return
+    }
+    const timer = setTimeout(() => {
+      const next = retryCountdown - 1
+      setRetryCountdown(next)
+      if (rateLimitMsgId && next > 0) {
+        setMessages(prev => prev.map(m =>
+          m.id === rateLimitMsgId
+            ? { ...m, content: `Too many requests. Try again in ${next}s.` }
+            : m
+        ))
+      }
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [retryCountdown, rateLimitMsgId])
 
   const handleSend = useCallback(async (content: string) => {
     if (submittingRef.current) return
@@ -108,10 +134,24 @@ export function StockChat() {
         setConversationId(data.conversationId)
       }
 
+      if (res.status === 429) {
+        const retryAfter = typeof data.retryAfter === "number" ? data.retryAfter : 60
+        const msgId = crypto.randomUUID()
+        setRateLimitMsgId(msgId)
+        setRetryCountdown(retryAfter)
+        setMessages(prev => [...prev.filter(m => !m.isLoading), {
+          id: msgId,
+          role: "assistant" as const,
+          content: `Too many requests. Try again in ${retryAfter}s.`,
+          timestamp: new Date(),
+        }])
+        // Intentionally not saved to localStorage — transient rate-limit message
+        return
+      }
+
       if (!res.ok) {
         const errorContent =
-          res.status === 429 ? "You've sent too many requests. Please wait a moment before trying again."
-          : res.status === 401 ? "Your session has expired. Please refresh the page."
+          res.status === 401 ? "Your session has expired. Please refresh the page."
           : res.status === 503 ? "Analysis is temporarily unavailable. Please try again in a moment."
           : "Something went wrong. Please try again."
         const errorMessage: ChatMessageData = {
@@ -349,10 +389,10 @@ export function StockChat() {
           <div className="mx-auto w-full max-w-3xl min-w-0">
             <ChatInput
               onSend={handleSend}
-              disabled={isLoading}
-              suggestions={
-                messages.length <= 1 ? QUICK_SUGGESTIONS : []
-              }
+              disabled={isLoading || retryCountdown > 0}
+              isLoading={isLoading}
+              retryCountdown={retryCountdown}
+              suggestions={messages.length <= 1 ? QUICK_SUGGESTIONS : []}
             />
           </div>
         </div>

@@ -325,32 +325,16 @@ export function ChatMessage({ message, onSend }: ChatMessageProps) {
                     </TabsContent>
                     <TabsContent value="fundamentals" className="mt-2 w-full min-w-0 max-w-full">
                       {analysis.fundamentals.every(m => m.value === "—") ? (
-                        <div className="rounded-xl border border-border/70 bg-background/50 px-4 py-5 min-w-0 text-center space-y-2">
-                          <FileText className="size-5 text-muted-foreground mx-auto" />
-                          <p className="text-sm font-medium text-foreground">
-                            Fundamentals not available for this listing
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            Check{" "}
-                            <a
-                              href="https://www.screener.in"
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-primary underline underline-offset-2 hover:opacity-80"
-                            >
-                              Screener.in
-                            </a>
-                            {" "}or{" "}
-                            <a
-                              href="https://www.tickertape.in"
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-primary underline underline-offset-2 hover:opacity-80"
-                            >
-                              Tickertape
-                            </a>
-                            {" "}for PE, ROE, Debt/Equity, and Revenue Growth data.
-                          </p>
+                        <div className="flex flex-col items-center gap-2 py-6 text-sm text-muted-foreground">
+                          <span>Fundamental data unavailable for this stock.</span>
+                          <a
+                            href={`https://www.screener.in/company/${analysis.symbol.replace('.NS', '').replace('.BO', '')}/`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline underline-offset-2 hover:opacity-80"
+                          >
+                            View on Screener.in →
+                          </a>
                         </div>
                       ) : (
                         <MetricsCard

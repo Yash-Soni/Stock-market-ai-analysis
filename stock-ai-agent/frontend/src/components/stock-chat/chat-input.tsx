@@ -1,14 +1,22 @@
 import { useState, useRef, useCallback, type ChangeEvent, type KeyboardEvent } from "react"
-import { SendHorizonal } from "lucide-react"
+import { SendHorizonal, Loader2 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
 interface ChatInputProps {
   onSend: (message: string) => void
   disabled?: boolean
+  isLoading?: boolean
+  retryCountdown?: number
   suggestions?: string[]
 }
 
-export function ChatInput({ onSend, disabled, suggestions = [] }: ChatInputProps) {
+export function ChatInput({
+  onSend,
+  disabled,
+  isLoading = false,
+  retryCountdown = 0,
+  suggestions = [],
+}: ChatInputProps) {
   const [value, setValue] = useState("")
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -36,6 +44,12 @@ export function ChatInput({ onSend, disabled, suggestions = [] }: ChatInputProps
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`
   }
 
+  const placeholder = isLoading
+    ? "Analyzing..."
+    : retryCountdown > 0
+    ? "Please wait..."
+    : "Ask about any stock... e.g. 'Analyze AAPL for long term'"
+
   return (
     <div className="space-y-3 w-full min-w-0">
       {suggestions.length > 0 && (
@@ -59,7 +73,7 @@ export function ChatInput({ onSend, disabled, suggestions = [] }: ChatInputProps
           value={value}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          placeholder="Ask about any stock... e.g. 'Analyze AAPL for long term'"
+          placeholder={placeholder}
           disabled={disabled}
           rows={1}
           className={cn(
@@ -72,14 +86,23 @@ export function ChatInput({ onSend, disabled, suggestions = [] }: ChatInputProps
           onClick={handleSend}
           disabled={disabled || !value.trim()}
           className={cn(
-            "shrink-0 size-9 rounded-xl flex items-center justify-center transition-all",
+            "shrink-0 rounded-xl flex items-center justify-center transition-all",
+            retryCountdown > 0 ? "h-9 px-2.5" : "size-9",
             value.trim() && !disabled
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "bg-muted text-muted-foreground"
           )}
-          aria-label="Send message"
+          aria-label={isLoading ? "Analyzing" : retryCountdown > 0 ? `Wait ${retryCountdown} seconds` : "Send message"}
         >
-          <SendHorizonal className="size-4" />
+          {isLoading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : retryCountdown > 0 ? (
+            <span className="text-xs font-semibold tabular-nums whitespace-nowrap">
+              Wait {retryCountdown}s
+            </span>
+          ) : (
+            <SendHorizonal className="size-4" />
+          )}
         </button>
       </div>
     </div>

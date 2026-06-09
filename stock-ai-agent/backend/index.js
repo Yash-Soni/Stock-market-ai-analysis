@@ -58,7 +58,14 @@ const chatLimiter = rateLimit({
     }
     return req.user.id
   },
-  handler: (req, res) => res.status(429).json({ error: "Too many requests. You can send 5 messages per minute. Please wait and try again." }),
+  handler: (req, res) => {
+    const retryAfter = Math.ceil(
+      req.rateLimit.resetTime
+        ? (req.rateLimit.resetTime - Date.now()) / 1000
+        : 60
+    )
+    res.status(429).json({ error: 'rate_limit_exceeded', message: 'Too many requests', retryAfter })
+  },
   standardHeaders: true, legacyHeaders: false,
 })
 
