@@ -51,7 +51,13 @@ async function requireAuth(req, res, next) {
 
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000, max: 5,
-  keyGenerator: (req) => req.user?.id ?? ipKeyGenerator(req.ip),
+  keyGenerator: (req) => {
+    if (!req.user?.id) {
+      logger.warn({ event: 'rate_limit_ip_fallback', path: req.path, ip: req.ip })
+      return ipKeyGenerator(req)
+    }
+    return req.user.id
+  },
   handler: (req, res) => res.status(429).json({ error: "Too many requests. You can send 5 messages per minute. Please wait and try again." }),
   standardHeaders: true, legacyHeaders: false,
 })

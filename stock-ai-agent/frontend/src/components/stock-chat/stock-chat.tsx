@@ -109,9 +109,11 @@ export function StockChat() {
       }
 
       if (!res.ok) {
-        const errorContent = res.status === 503
-          ? "Analysis is temporarily unavailable. Please try again in a moment."
-          : (data?.error ?? `Request failed (${res.status}). Make sure the backend is running on port 3000.`)
+        const errorContent =
+          res.status === 429 ? "You've sent too many requests. Please wait a moment before trying again."
+          : res.status === 401 ? "Your session has expired. Please refresh the page."
+          : res.status === 503 ? "Analysis is temporarily unavailable. Please try again in a moment."
+          : "Something went wrong. Please try again."
         const errorMessage: ChatMessageData = {
           id: crypto.randomUUID(),
           role: "assistant",
