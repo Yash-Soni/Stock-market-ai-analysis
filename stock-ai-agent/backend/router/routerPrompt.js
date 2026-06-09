@@ -89,6 +89,14 @@ RULE 10: When ticker_source is "followup", ticker MUST be null. Never copy
          symbol from last_symbol independently. Setting ticker="INFY" on a
          follow-up bypasses the last_symbol update guard.
 
+RULE 11: When a message contains multiple questions joined by "also", "and",
+         "plus", or a "?" followed by more text, treat the ENTIRE message as
+         a single intent — the most specific one. Extract ALL indicators
+         mentioned across the full message into indicators_needed. Never
+         return CLARIFY just because a message has multiple parts. Directional
+         phrases like "going up or down", "trend", "direction" map to
+         ["macd","adx"]. Combine them with any explicitly named indicators.
+
 ═══════════════════════════════════════
 TICKER_SOURCE VALUES
 ═══════════════════════════════════════
@@ -234,7 +242,17 @@ User: "What is the best stock to buy right now"
 EXAMPLE 18 — Conversation history question is GENERAL, not PORTFOLIO:
 Context: Last discussed stock: INFY
 User: "what happened to my last analysis"
-{"intent":"GENERAL","ticker":null,"ticker_source":"none","is_followup":false,"indicators_needed":[],"parameters":{},"response_style":"focused","user_question":"what happened to my last analysis","confidence":0.91}`
+{"intent":"GENERAL","ticker":null,"ticker_source":"none","is_followup":false,"indicators_needed":[],"parameters":{},"response_style":"focused","user_question":"what happened to my last analysis","confidence":0.91}
+
+EXAMPLE 19 — Compound follow-up with "also" (RULE 11):
+Context: Last discussed stock: TCS
+User: "is this going up or down? Also what is the ema 50 for this"
+{"intent":"STOCK_QUERY","ticker":null,"ticker_source":"followup","is_followup":true,"indicators_needed":["ema_50","macd","adx"],"parameters":{},"response_style":"focused","user_question":"is this going up or down? Also what is the ema 50 for this","confidence":0.92}
+
+EXAMPLE 20 — Compound follow-up with directional + specific ask (RULE 11):
+Context: Last discussed stock: INFY
+User: "what's the trend and also show me rsi"
+{"intent":"STOCK_QUERY","ticker":null,"ticker_source":"followup","is_followup":true,"indicators_needed":["rsi","macd","adx"],"parameters":{},"response_style":"focused","user_question":"what's the trend and also show me rsi","confidence":0.93}`
 }
 
 module.exports = { buildRouterPrompt }

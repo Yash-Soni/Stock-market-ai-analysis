@@ -346,8 +346,8 @@ def _compute_volume_avg_20(df, params):
 
 
 def _compute_support_resistance(df, params):
-    """Simple pivot-based support/resistance: swing lows below current price, swing highs above."""
-    lookback = int(params.get("lookback", 60))
+    """Pivot-based support/resistance using a 180-day lookback to capture levels on both sides of price."""
+    lookback = int(params.get("lookback", 180))
     window   = int(params.get("window", 5))
     recent   = df.tail(lookback)
     if len(recent) < window * 2 + 1:
@@ -380,6 +380,14 @@ def _compute_support_resistance(df, params):
     current     = round(float(closes.iloc[-1]), 2)
     resistances = sorted([r for r in cluster(resistance_candidates) if r > current])[:3]
     supports    = sorted([s for s in cluster(support_candidates)    if s < current], reverse=True)[:3]
+
+    # Fallback: if no pivot lows found below current (e.g. stock at multi-month low),
+    # use the rolling minimum of the full lookback as a floor support level.
+    if not supports:
+        low_col = "low" if "low" in recent.columns else "close"
+        floor = round(float(recent[low_col].min()), 2)
+        if floor < current:
+            supports = [floor]
 
     return {"support": supports, "resistance": resistances, "current": current}
 
