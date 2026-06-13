@@ -50,23 +50,27 @@ async function requireAuth(req, res, next) {
 }
 
 const chatLimiter = rateLimit({
-  windowMs: 60 * 1000, max: 5,
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
   keyGenerator: (req) => {
     if (!req.user?.id) {
-      logger.warn({ event: 'rate_limit_ip_fallback', path: req.path, ip: req.ip })
+      logger.warn({ event: 'rate_limit_ip_fallback', path: req.path })
       return ipKeyGenerator(req)
     }
     return req.user.id
   },
   handler: (req, res) => {
     const retryAfter = Math.ceil(
-      req.rateLimit.resetTime
-        ? (req.rateLimit.resetTime - Date.now()) / 1000
-        : 60
+      (req.rateLimit.resetTime - Date.now()) / 1000
     )
-    res.status(429).json({ error: 'rate_limit_exceeded', message: 'Too many requests', retryAfter })
-  },
-  standardHeaders: true, legacyHeaders: false,
+    res.status(429).json({
+      error: 'rate_limit_exceeded',
+      message: 'Too many requests',
+      retryAfter: Math.max(retryAfter, 1)
+    })
+  }
 })
 
 // ── Static routes ─────────────────────────────────────────────────────────────
