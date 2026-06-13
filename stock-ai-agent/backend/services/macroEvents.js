@@ -2,6 +2,7 @@ const axios = require("axios")
 const Groq = require("groq-sdk")
 const { clusterHeadlines } = require("./newsCluster")
 const { logger } = require("../lib/logger")
+const { db } = require("./client")
 
 const client = new Groq({
   apiKey: process.env.GROQ_API_KEY
@@ -41,127 +42,6 @@ async function fetchNews() {
     logger.warn({ event: 'macro_news_fetch_failed', error: err.message })
     return []
   }
-}
-
-async function extractMarketEvents(articles){
-
-  const headlines = articles.map(a=>a.title).join("\n")
-  const completion =
-    await client.chat.completions.create({
-      model:"llama-3.3-70b-versatile",
-      temperature:0,
-      messages:[
-        {
-          role:"system",
-          content:`
-            Extract major market-moving global events.
-
-            Return JSON array:
-
-            [
-              {
-                event:"",
-                sectorsImpacted:["Energy","Defense"],
-                sentiment:{
-                  Energy:"Bullish",
-                  Airlines:"Bearish"
-                }
-              }
-            ]
-
-            Focus on events affecting:
-            - commodities
-            - geopolitics
-            - inflation
-            - central banks
-          `
-        },
-        {
-          role:"user",
-          content:headlines
-        }
-      ]
-    })
-  const raw = completion.choices[0].message.content
-  if (!raw || typeof raw !== "string") return []
-
-  function extractJsonArray(str) {
-    const s = str.trim()
-    const codeBlock = s.match(/```(?:json)?\s*([\s\S]*?)```/)
-    const toParse = codeBlock ? codeBlock[1].trim() : s
-    const start = toParse.indexOf("[")
-    const end = toParse.lastIndexOf("]")
-    if (start === -1 || end === -1 || end <= start) return null
-    try {
-      return JSON.parse(toParse.slice(start, end + 1))
-    } catch {
-      return null
-    }
-  }
-
-  try {
-    const events = extractJsonArray(raw)
-    if (Array.isArray(events)) {
-      return events
-    }
-    return JSON.parse(raw)
-  } catch (err) {
-    logger.warn({ event: 'macro_events_parse_failed', stage: 'extract_market_events', error: err.message })
-    return []
-  }
-}
-
-async function inferSectorImpact(event){
-
-  const completion =
-    await client.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      temperature: 0,
-      messages: [
-        {
-          role: "system",
-          content: `
-            You are a macro strategist.
-
-            For each event determine:
-            - sectors positively impacted
-            - sectors negatively impacted
-
-            Return JSON format:
-
-            [
-            {
-              event:"",
-              bullishSectors:[],
-              bearishSectors:[]
-            }
-            ]
-          `
-        },
-        {
-          role: "user",
-          content: JSON.stringify(event)
-        }
-      ]
-    })
-
-  const raw = completion.choices[0].message.content
-  if (!raw || typeof raw !== "string") return null
-  try {
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed[0] : parsed
-  } catch {
-    return null
-  }
-}
-
-function normalizeImpact(impact){
-
-  return {
-    bullishSectors: impact?.bullishSectors ?? impact?.bullish ?? [],
-    bearishSectors: impact?.bearishSectors ?? impact?.bearish ?? []
-  }
-
 }
 
 async function generateMacroEvents(clusters){
@@ -212,38 +92,36 @@ async function generateMacroEvents(clusters){
   }
 }
 
-async function withRetry(fn, retries = 2){
-
-  try{
-    return await fn()
-  }catch(err){
-
-    if(
-      retries > 0 &&
-      err?.response?.status === 429
-    ){
-      await new Promise(r => setTimeout(r, 2000))
-      return withRetry(fn, retries - 1)
-    }
-
-    throw err
-  }
-}
-
 async function getMacroEvents(){
 
   const now = Date.now()
 
-  if(
-    cache.events &&
-    now - cache.timestamp < CACHE_DURATION
-  ){
+  // Layer 1: in-memory cache (avoids Supabase round-trip within same process)
+  if (cache.events && now - cache.timestamp < CACHE_DURATION) {
     return cache.events
   }
 
+  // Layer 2: Supabase persistent cache (survives Render restarts)
+  try {
+    const { data: row } = await db
+      .from('macro_events_cache')
+      .select('events, cached_at')
+      .eq('id', 1)
+      .single()
+
+    if (row && (now - new Date(row.cached_at).getTime()) < CACHE_DURATION) {
+      const events = Array.isArray(row.events) ? row.events : []
+      cache = { events, timestamp: new Date(row.cached_at).getTime() }
+      logger.info({ event: 'macro_events_cache_hit', source: 'supabase' })
+      return events
+    }
+  } catch (err) {
+    logger.warn({ event: 'macro_events_cache_read_failed', error: err.message })
+  }
+
+  // Layer 3: live fetch + Groq call
   const news = await fetchNews()
 
-  // Step 1: extract headlines (filter out missing titles)
   const headlines = news
     .map((a) => a && a.title)
     .filter(Boolean)
@@ -253,7 +131,6 @@ async function getMacroEvents(){
     return []
   }
 
-  // Step 2: cluster similar headlines
   const clusters = clusterHeadlines(headlines)
 
   if (clusters.length === 0) {
@@ -261,15 +138,21 @@ async function getMacroEvents(){
     return []
   }
 
-  const events = await withRetry(() =>
-    generateMacroEvents(clusters)
-  )
+  const events = await generateMacroEvents(clusters)
 
   const topEvents = Array.isArray(events) ? events.slice(0, 10) : []
 
-  cache = {
-    events: topEvents,
-    timestamp: now
+  cache = { events: topEvents, timestamp: now }
+
+  // Persist to Supabase so next cold start skips the Groq call
+  try {
+    await db.from('macro_events_cache').upsert({
+      id: 1,
+      events: topEvents,
+      cached_at: new Date().toISOString()
+    })
+  } catch (err) {
+    logger.warn({ event: 'macro_events_cache_write_failed', error: err.message })
   }
 
   return topEvents

@@ -760,6 +760,10 @@ def compute_indicators(body: ComputeRequest):
     return {"ticker": resolved, "computed": computed}
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.get("/capabilities")
 def get_capabilities():
     """Returns the list of available indicator names from INDICATOR_REGISTRY."""
